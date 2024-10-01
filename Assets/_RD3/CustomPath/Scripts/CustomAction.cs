@@ -1,11 +1,7 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 
 [Serializable]
@@ -18,6 +14,7 @@ public enum ActionType
 interface IAction
 {
     public void ExecuteAction();
+    public void ExecuteRewind();
 }
 
 public interface IMovable
@@ -30,6 +27,11 @@ public abstract class ActionParameters : IAction
     public CustomAction onCompleteAction;
     public CustomAction lastMoveParams;
     public virtual async void ExecuteAction()
+    {
+        throw new NotImplementedException();
+    }
+
+    public virtual async void ExecuteRewind()
     {
         throw new NotImplementedException();
     }
@@ -49,6 +51,13 @@ public class ScriptableAction : ActionParameters
         onCompleteAction.Execute();
     }
     
+    public override async void ExecuteRewind()
+    {
+        await Task.Delay(delayStart * 1000);
+        eventToInvoke.Invoke();
+        await Task.Delay(delayNext * 1000);
+        lastMoveParams.Execute();
+    }
 }
 
 [Serializable]
@@ -63,6 +72,14 @@ public class MoveParams : ActionParameters
             onCompleteAction.Execute();
         });
     }
+    
+    public override void ExecuteRewind()
+    {
+        gameObject.GetComponent<IMovable>().SetMovePosition(movePosition, () =>
+        {
+            lastMoveParams.Execute();
+        });
+    }
 }
 
 public class CustomAction : MonoBehaviour
@@ -73,14 +90,18 @@ public class CustomAction : MonoBehaviour
 
     public void Execute()
     {
+        GetCurrentAction().ExecuteAction();
+    }
+
+    public ActionParameters GetCurrentAction()
+    {
         ActionParameters actionParameters = actionType switch
         {
             ActionType.EventType => eventParams,
             ActionType.Move => moveParams,
             _ => throw new ArgumentOutOfRangeException()
         };
-
-        actionParameters.ExecuteAction();
+        return actionParameters;
     }
 
 #if UNITY_EDITOR
@@ -159,28 +180,37 @@ public class CustomAction : MonoBehaviour
             case ActionType.Move:
                 current = moveParams;
                 lastPosition = moveParams.movePosition;
-                DrawDottedLine(transform.position, moveParams.gameObject.transform.position, Color.red);
+        
                 if (moveParams.gameObject != null)
                 {
+                    DrawDottedLine(transform.position, moveParams.gameObject.transform.position, Color.red);
                     //draw the first movement line
                     if (moveParams.lastMoveParams == null)
                         OnDrawGizmosLine(moveParams.movePosition, moveParams.gameObject.transform.position, Color.green);
                     else
                         DrawDottedLine(moveParams.movePosition, moveParams.gameObject.transform.position, Color.cyan, "",
                             Color.white);
-                    
-                    
                 }
                 if (current.onCompleteAction != null)
                 {
                     OnDrawGizmosLine(current.onCompleteAction.transform.position, transform.position, Color.black,
                         "Next", Color.white);
-                    if (current.lastMoveParams != null)
-                        lastPosition = current.lastMoveParams.moveParams.movePosition;
+                    switch (current.onCompleteAction.actionType)
+                    {
+                        case ActionType.EventType:
+                            lastPosition = moveParams.movePosition;
+                            break;
+                        case ActionType.Move:
+                            if (current.lastMoveParams != null)
+                                lastPosition = current.lastMoveParams.moveParams.movePosition;
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                    
+                    
                 }
                 
-         
-
                 break;
         }
 
