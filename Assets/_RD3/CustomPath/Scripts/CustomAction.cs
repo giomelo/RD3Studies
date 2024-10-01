@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
 
 
 [Serializable]
@@ -11,10 +12,16 @@ public enum ActionType
     Move
 }
 
+[Serializable]
+public enum EventsType
+{
+    SO,
+    UnityEvent
+}
+
 interface IAction
 {
     public void ExecuteAction();
-    public void ExecuteRewind();
 }
 
 public interface IMovable
@@ -30,16 +37,13 @@ public abstract class ActionParameters : IAction
     {
         throw new NotImplementedException();
     }
-
-    public virtual async void ExecuteRewind()
-    {
-        throw new NotImplementedException();
-    }
 }
 [Serializable]
 public class ScriptableAction : ActionParameters
 {
     public SO_VoidEvent eventToInvoke;
+    public UnityEvent unityEventToInvoke;
+    public EventsType eventsType;
     public int delayStart;
     public int delayNext;
     
@@ -47,16 +51,9 @@ public class ScriptableAction : ActionParameters
     {
         await Task.Delay(delayStart * 1000);
         eventToInvoke.Invoke();
+        unityEventToInvoke?.Invoke();
         await Task.Delay(delayNext * 1000);
         onCompleteAction.Execute();
-    }
-    
-    public override async void ExecuteRewind()
-    {
-        await Task.Delay(delayStart * 1000);
-        eventToInvoke.Invoke();
-        await Task.Delay(delayNext * 1000);
-        lastMoveParams.Execute();
     }
 }
 
@@ -70,14 +67,6 @@ public class MoveParams : ActionParameters
         gameObject.GetComponent<IMovable>().SetMovePosition(movePosition, () =>
         {
             onCompleteAction.Execute();
-        });
-    }
-    
-    public override void ExecuteRewind()
-    {
-        gameObject.GetComponent<IMovable>().SetMovePosition(movePosition, () =>
-        {
-            lastMoveParams.Execute();
         });
     }
 }
@@ -218,7 +207,7 @@ public class CustomAction : MonoBehaviour
         switch (current.onCompleteAction.actionType)
         {
             case ActionType.EventType:
-                DrawText(lastPosition, $"{current.onCompleteAction.eventParams.eventToInvoke.name}", Color.white);
+                if(current.onCompleteAction.eventParams.eventToInvoke != null) DrawText(lastPosition, $"{current.onCompleteAction.eventParams.eventToInvoke.name}", Color.white);
                 break;
             case ActionType.Move:
                 OnDrawGizmosLine(current.onCompleteAction.moveParams.movePosition, lastPosition, Color.green, "",
@@ -254,7 +243,18 @@ public class CustomActionEditor : Editor
         {
             case ActionType.EventType:
                 // EditorGUILayout.PropertyField(serializedObject.FindProperty("chatBubbleParams").FindPropertyRelative("text"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams"));
+                //EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams").FindPropertyRelative("lastMoveParams"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams").FindPropertyRelative("onCompleteAction"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams").FindPropertyRelative("delayStart"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams").FindPropertyRelative("delayNext"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams").FindPropertyRelative("eventsType"));
+
+                EditorGUILayout.PropertyField(targetClass.eventParams.eventsType == EventsType.SO
+                    ? serializedObject.FindProperty("eventParams").FindPropertyRelative("eventToInvoke")
+                    : serializedObject.FindProperty("eventParams").FindPropertyRelative("unityEventToInvoke"));
+
+
                 break;
             case ActionType.Move:
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("moveParams"));

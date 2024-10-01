@@ -38,6 +38,11 @@ public class RunCustomActionEditor : Editor
 
     private void OnSceneGUI()
     {
+        var sceneCamera = SceneView.currentDrawingSceneView.camera;
+
+        if (Vector3.Distance(sceneCamera.transform.position, _customAction.transform.position) > 50)
+            return;
+
         Handles.BeginGUI();
         var rectMin = Camera.current.WorldToScreenPoint(
             _customAction.transform.position);

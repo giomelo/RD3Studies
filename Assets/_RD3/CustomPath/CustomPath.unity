@@ -188,9 +188,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
         type: 3}
+      propertyPath: actionType
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
       propertyPath: moveParams.gameObject
       value: 
       objectReference: {fileID: 1963620202}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
+      propertyPath: eventParams.eventsType
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
         type: 3}
       propertyPath: moveParams.lastMoveParams
@@ -210,6 +220,21 @@ PrefabInstance:
         type: 3}
       propertyPath: moveParams.movePosition.z
       value: -14.803315
+      objectReference: {fileID: 0}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
+      propertyPath: eventParams.unityEventToInvoke.m_PersistentCalls.m_Calls.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
+      propertyPath: eventParams.unityEventToInvoke.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
+      propertyPath: eventParams.unityEventToInvoke.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -268,6 +293,10 @@ MonoBehaviour:
     onCompleteAction: {fileID: 0}
     lastMoveParams: {fileID: 0}
     eventToInvoke: {fileID: 0}
+    unityEventToInvoke:
+      m_PersistentCalls:
+        m_Calls: []
+    eventsType: 0
     delayStart: 0
     delayNext: 0
   moveParams:
@@ -453,6 +482,10 @@ MonoBehaviour:
     onCompleteAction: {fileID: 0}
     lastMoveParams: {fileID: 0}
     eventToInvoke: {fileID: 0}
+    unityEventToInvoke:
+      m_PersistentCalls:
+        m_Calls: []
+    eventsType: 0
     delayStart: 0
     delayNext: 0
   moveParams:
@@ -782,9 +815,35 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
         type: 3}
+      propertyPath: actionType
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
+      propertyPath: eventParams.delayNext
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
       propertyPath: moveParams.gameObject
       value: 
       objectReference: {fileID: 1963620202}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
+      propertyPath: eventParams.delayStart
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
+      propertyPath: eventParams.eventsType
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
+      propertyPath: eventParams.eventToInvoke
+      value: 
+      objectReference: {fileID: 11400000, guid: 18278044906125f4eb6f47b7efa4bf55,
+        type: 2}
     - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
         type: 3}
       propertyPath: moveParams.movePosition.x
@@ -803,6 +862,11 @@ PrefabInstance:
     - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
         type: 3}
       propertyPath: moveParams.onCompleteAction
+      value: 
+      objectReference: {fileID: 42731499}
+    - target: {fileID: 3742398028428560806, guid: a58d3e6e7854b714db93f4c41d5c3963,
+        type: 3}
+      propertyPath: eventParams.onCompleteAction
       value: 
       objectReference: {fileID: 42731499}
     m_RemovedComponents: []
@@ -906,6 +970,10 @@ MonoBehaviour:
     onCompleteAction: {fileID: 60137247}
     lastMoveParams: {fileID: 228857723}
     eventToInvoke: {fileID: 11400000, guid: 18278044906125f4eb6f47b7efa4bf55, type: 2}
+    unityEventToInvoke:
+      m_PersistentCalls:
+        m_Calls: []
+    eventsType: 0
     delayStart: 5
     delayNext: 2
   moveParams:
