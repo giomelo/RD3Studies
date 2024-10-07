@@ -10,7 +10,7 @@ namespace _RD3.CustomPath
         public void SetMovePosition(Vector3 finalPos, Action onReached = null)
         {
             var distance = Vector3.Distance(transform.position, finalPos);
-            transform.DOMove(finalPos, distance / _speed).OnComplete(() =>
+            transform.DOMove(finalPos, distance / _speed).SetEase(Ease.Linear).OnComplete(() =>
             {
                 onReached?.Invoke();
             });
