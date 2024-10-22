@@ -1,7 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using _RD3.SplineTool;
+using _RD3.CustomPath.Scripts;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
@@ -35,8 +34,8 @@ public interface IMovable
 public abstract class ActionParameters : IAction
 {
     public GameObject gameObject;
-    public CustomAction onCompleteAction;
-    public CustomAction lastAction;
+    [HideInInspector]public CustomAction onCompleteAction;
+    [HideInInspector]public CustomAction lastAction;
     public virtual void ExecuteAction()
     {
         throw new NotImplementedException();
@@ -57,7 +56,7 @@ public class ScriptableAction : ActionParameters
         eventToInvoke.Invoke();
         unityEventToInvoke?.Invoke();
         await Task.Delay(delayNext * 1000);
-        onCompleteAction.Execute();
+        if(onCompleteAction != null) onCompleteAction.Execute();
     }
 }
 
@@ -71,7 +70,7 @@ public class MoveParams : ActionParameters
     {
         gameObject.GetComponent<IMovable>().SetMovePosition(movePosition, () =>
         {
-            onCompleteAction.Execute();
+            if(onCompleteAction != null) onCompleteAction.Execute();
         });
     }
 }
@@ -81,7 +80,7 @@ public class CustomAction : MonoBehaviour
     public ActionType actionType;
     public ScriptableAction eventParams;
     public MoveParams moveParams;
-
+    [HideInInspector]public RunCustomAction customAction;
     public void Execute()
     {
         GetCurrentAction().ExecuteAction();
@@ -148,6 +147,7 @@ public class CustomAction : MonoBehaviour
     }
 
     public Vector3 lastPosition;
+
     private void OnDrawGizmos()
     {
         var sceneCamera = SceneView.currentDrawingSceneView.camera;
@@ -155,119 +155,151 @@ public class CustomAction : MonoBehaviour
         if (Vector3.Distance(sceneCamera.transform.position, transform.position) > 50)
             return;
 
-        DrawText(transform.position + new Vector3(0,0.5f,0), actionType.ToString(), Color.white);
-        ActionParameters current = moveParams;
+        DrawText(transform.position + new Vector3(0, 0.5f, 0), actionType.ToString(), Color.white);
 
-        switch (actionType)
+        ActionParameters current = GetCurrentActionParameters();
+
+        DrawCurrentActionGizmos(current);
+
+        if (current.onCompleteAction != null)
         {
-            case ActionType.EventType:
-                current = eventParams;
-                if (current.onCompleteAction != null)
-                {
-                    OnDrawGizmosLine(current.onCompleteAction.transform.position, transform.position, Color.black,
-                        "Next", Color.white);
-                    if (current.lastAction != null)
-                        lastPosition = current.lastAction.moveParams.movePosition;
-                }
-
-                break;
-            case ActionType.Move:
-                current = moveParams;
-                lastPosition = moveParams.movePosition;
-        
-                if (moveParams.gameObject != null)
-                {
-                    DrawDottedLine(transform.position, moveParams.gameObject.transform.position, Color.red);
-                    //draw the first movement line
-                    if (moveParams.lastAction == null)
-                        OnDrawGizmosLine(lastPosition, moveParams.gameObject.transform.position, Color.green);
-                       
-                    else
-                        DrawDottedLine(lastPosition, moveParams.gameObject.transform.position, Color.cyan, "",
-                            Color.white);
-                }
-                if (current.onCompleteAction != null)
-                {
-                    OnDrawGizmosLine(current.onCompleteAction.transform.position, transform.position, Color.black,
-                        "Next", Color.white);
-                    switch (current.onCompleteAction.actionType)
-                    {
-                        case ActionType.EventType:
-                            lastPosition = moveParams.movePosition;
-                            break;
-                        case ActionType.Move:
-                            if (current.lastAction != null)
-                                lastPosition = current.lastAction.moveParams.movePosition;
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
-                    }
-                }
-                
-                break;
+            DrawOnCompleteActionGizmos(current);
         }
-
-        if (current.onCompleteAction == null) return;
-        switch (current.onCompleteAction.actionType)
-        {
-            case ActionType.EventType:
-                if (current.onCompleteAction.eventParams.eventToInvoke != null)
-                {
-                    Handles.color = Color.yellow;
-                    Handles.SphereHandleCap(
-                        0,
-                        lastPosition,
-                        transform.rotation * Quaternion.LookRotation(Vector3.right),
-                        0.5f,
-                        EventType.Repaint
-                    );
-                
-                    if (current.onCompleteAction.eventParams.eventsType == EventsType.SO)
-                    {
-                        Debug.Log(lastPosition);
-                        DrawText(lastPosition + new Vector3(0, 0.5f,0), $"{current.onCompleteAction.eventParams.eventToInvoke.name}", Color.white);
-                    }
-                }
-                break;
-            case ActionType.Move:
-                if(actionType == ActionType.EventType)
-                {
-                    lastPosition = GetLastMovePosition();
-                }
-                else
-                {
-                    lastPosition = moveParams.movePosition;
-                }
-
-                OnDrawGizmosLine(current.onCompleteAction.moveParams.movePosition, lastPosition, Color.green, "",
-                    Color.white);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-
     }
+
+    private ActionParameters GetCurrentActionParameters()
+{
+    return actionType switch
+    {
+        ActionType.EventType => eventParams,
+        ActionType.Move => moveParams,
+        _ => throw new ArgumentOutOfRangeException()
+    };
+}
+
+private void DrawCurrentActionGizmos(ActionParameters current)
+{
+    switch (actionType)
+    {
+        case ActionType.EventType:
+            DrawEventTypeGizmos(current);
+            break;
+        case ActionType.Move:
+            DrawMoveTypeGizmos(current);
+            break;
+    }
+}
+
+private void DrawEventTypeGizmos(ActionParameters current)
+{
+    if (current.onCompleteAction != null)
+    {
+        OnDrawGizmosLine(current.onCompleteAction.transform.position, transform.position, Color.black, "Next", Color.white);
+        if (current.lastAction != null)
+            lastPosition = current.lastAction.moveParams.movePosition;
+    }
+}
+
+private void DrawMoveTypeGizmos(ActionParameters current)
+{
+    lastPosition = moveParams.movePosition;
+
+    if (moveParams.gameObject != null)
+    {
+        DrawDottedLine(transform.position, moveParams.gameObject.transform.position, Color.red);
+
+        if (moveParams.lastAction == null)
+            OnDrawGizmosLine(lastPosition, moveParams.gameObject.transform.position, Color.green);
+        else
+            DrawDottedLine(lastPosition, moveParams.gameObject.transform.position, Color.cyan, "", Color.white);
+    }
+
+    if (current.onCompleteAction != null)
+    {
+        OnDrawGizmosLine(current.onCompleteAction.transform.position, transform.position, Color.black, "Next", Color.white);
+        UpdateLastPositionBasedOnActionType(current);
+    }
+}
+
+private void UpdateLastPositionBasedOnActionType(ActionParameters current)
+{
+    switch (current.onCompleteAction.actionType)
+    {
+        case ActionType.EventType:
+            lastPosition = moveParams.movePosition;
+            break;
+        case ActionType.Move:
+            if (current.lastAction != null)
+                lastPosition = current.lastAction.moveParams.movePosition;
+            break;
+        default:
+            throw new ArgumentOutOfRangeException();
+    }
+}
+
+private void DrawOnCompleteActionGizmos(ActionParameters current)
+{
+    switch (current.onCompleteAction.actionType)
+    {
+        case ActionType.EventType:
+            DrawOnCompleteEventTypeGizmos(current);
+            break;
+        case ActionType.Move:
+            DrawOnCompleteMoveTypeGizmos(current);
+            break;
+        default:
+            throw new ArgumentOutOfRangeException();
+    }
+}
+
+private void DrawOnCompleteEventTypeGizmos(ActionParameters current)
+{
+    if (current.onCompleteAction.eventParams.eventToInvoke != null)
+    {
+        Handles.color = Color.yellow;
+        Handles.SphereHandleCap(0, lastPosition, transform.rotation * Quaternion.LookRotation(Vector3.right), 0.5f, EventType.Repaint);
+
+        if (current.onCompleteAction.eventParams.eventsType == EventsType.SO)
+        {
+            DrawText(lastPosition + new Vector3(0, 0.5f, 0), $"{current.onCompleteAction.eventParams.eventToInvoke.name}", Color.white);
+        }
+    }
+}
+
+private void DrawOnCompleteMoveTypeGizmos(ActionParameters current)
+{
+    if (actionType == ActionType.EventType)
+        lastPosition = GetLastMovePosition();
+    else
+        lastPosition = moveParams.movePosition;
+    
+    OnDrawGizmosLine(current.onCompleteAction.moveParams.movePosition, lastPosition, Color.green, "", Color.white);
+}
+   
     Vector3 position = Vector3.zero;
     private Vector3 GetLastMovePosition()
     {
         CustomAction currentAction = this;
-        
+
         while (currentAction != null)
         {
+            Debug.Log("1");
             if (currentAction.actionType == ActionType.EventType)
             {
                 position = currentAction.moveParams.gameObject.transform.position;
             }
+
             if (currentAction.GetCurrentAction().lastAction == null)
             {
                 if (currentAction.actionType == ActionType.EventType)
                 {
                     return position;
                 }
-          
+
                 return currentAction.moveParams.gameObject.transform.position;
-                
+
             }
+
             if (currentAction.GetCurrentAction().lastAction.actionType == ActionType.EventType)
             {
                 currentAction = currentAction.GetCurrentAction().lastAction;
@@ -277,7 +309,7 @@ public class CustomAction : MonoBehaviour
                 position = currentAction.GetCurrentAction().lastAction.moveParams.movePosition;
                 return position;
             }
-        
+
         }
 
         return position;
@@ -306,8 +338,6 @@ public class CustomActionEditor : Editor
         switch (targetClass.actionType)
         {
             case ActionType.EventType:
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams").FindPropertyRelative("lastAction"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams").FindPropertyRelative("onCompleteAction"));
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams").FindPropertyRelative("delayStart"));
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams").FindPropertyRelative("delayNext"));
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("eventParams").FindPropertyRelative("eventsType"));

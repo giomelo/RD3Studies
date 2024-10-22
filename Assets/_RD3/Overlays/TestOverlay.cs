@@ -1,3 +1,5 @@
+
+#if UNITY_EDITOR
 using System;
 using UnityEditor;
 using UnityEditor.Overlays;
@@ -68,3 +70,4 @@ namespace _RD3.Overlays
     }
  
 }
+#endif
