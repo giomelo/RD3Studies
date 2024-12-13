@@ -43,6 +43,7 @@ namespace _RD3.CustomPath.Scripts
         }
 
         private GameObject _currentObject;
+        #if UNITY_EDITOR
         public void AddAction()
         {
             EditorUtility.SetDirty(this);
@@ -83,7 +84,7 @@ namespace _RD3.CustomPath.Scripts
             DestroyImmediate(action.gameObject);
             if(actions.Count > 0) actions.Last().GetCurrentAction().onCompleteAction = null;
         }
-    
+    #endif
     }
 
 #if UNITY_EDITOR

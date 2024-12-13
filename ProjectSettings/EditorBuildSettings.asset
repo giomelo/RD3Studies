@@ -19,6 +19,8 @@ EditorBuildSettings:
     guid: 0e1bfeffe352b5b46b16b2c997345495
   m_configObjects:
     EasyAR.Settings: {fileID: 11400000, guid: 6273b1fa9b1e6554b8f51433a92ca757, type: 2}
+    com.unity.addressableassets: {fileID: 11400000, guid: e0b75eb4bdd622d409de7ce99c294a1a,
+      type: 2}
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 064719b683c568842acd88464a78e6bb,
       type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: a0741052823aee34daa59c1faf2429ea,

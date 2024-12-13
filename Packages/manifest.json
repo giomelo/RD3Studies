@@ -1,9 +1,15 @@
 {
   "dependencies": {
+    "com.gamegaard.commons": "https://github.com/Gamegaard/Commons.git",
+    "com.gamegaard.dynamicvalues": "https://github.com/Gamegaard/DynamicValues.git",
+    "com.gamegaard.utils": "https://github.com/Gamegaard/UnityUtils.git",
+    "com.unity.addressables": "1.21.21",
+    "com.unity.assetbundlebrowser": "https://github.com/Unity-Technologies/AssetBundles-Browser.git",
     "com.unity.collab-proxy": "2.3.1",
     "com.unity.ide.rider": "3.0.27",
     "com.unity.ide.visualstudio": "2.0.22",
     "com.unity.ide.vscode": "1.2.5",
+    "com.unity.profiling.core": "1.0.2",
     "com.unity.test-framework": "1.1.33",
     "com.unity.textmeshpro": "3.0.6",
     "com.unity.timeline": "1.7.6",

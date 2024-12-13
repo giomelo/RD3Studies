@@ -1,0 +1,22 @@
+ManifestFileVersion: 0
+CRC: 1668596869
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: b21a980adfdc87a00f3b3cd8ff5962c0
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 767148d2cba1a92a15442f2b767884c0
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: b21a980adfdc87a00f3b3cd8ff5962c0
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/_RD3/Adressables/New Prefab.prefab
+Dependencies: []

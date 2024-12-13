@@ -283,7 +283,6 @@ private void DrawOnCompleteMoveTypeGizmos(ActionParameters current)
 
         while (currentAction != null)
         {
-            Debug.Log("1");
             if (currentAction.actionType == ActionType.EventType)
             {
                 position = currentAction.moveParams.gameObject.transform.position;

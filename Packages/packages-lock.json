@@ -1,5 +1,49 @@
 {
   "dependencies": {
+    "com.gamegaard.commons": {
+      "version": "https://github.com/Gamegaard/Commons.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "d1241ac52dc41ba38fd4b5149e53b0578b2867db"
+    },
+    "com.gamegaard.dynamicvalues": {
+      "version": "https://github.com/Gamegaard/DynamicValues.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.gamegaard.commons": "https://github.com/KaijotaDev/GamegaardCommons.git#1.0.6"
+      },
+      "hash": "a9a24fabe4971028f71ade8291d1025882aa36e1"
+    },
+    "com.gamegaard.utils": {
+      "version": "https://github.com/Gamegaard/UnityUtils.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "736ef1d9a27f46d7d6ee33bc7e2d5660b21c7528"
+    },
+    "com.unity.addressables": {
+      "version": "1.21.21",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.assetbundle": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.scriptablebuildpipeline": "1.21.23",
+        "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.assetbundlebrowser": {
+      "version": "https://github.com/Unity-Technologies/AssetBundles-Browser.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "ad2a81ec3068eafd48753df1825a8dd7201ce60c"
+    },
     "com.unity.collab-proxy": {
       "version": "2.3.1",
       "depth": 0,
@@ -35,6 +79,20 @@
     "com.unity.ide.vscode": {
       "version": "1.2.5",
       "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.profiling.core": {
+      "version": "1.0.2",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.scriptablebuildpipeline": {
+      "version": "1.21.23",
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
