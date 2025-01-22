@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Rock
+  m_Shader: {fileID: 4800000, guid: 8e1247c2208bf4bef82f45b4c36f0600, type: 3}
+  m_Parent: {fileID: 2100000, guid: 4258860bc49eb49c69d2ace3b87d5572, type: 2}
+  m_ModifiedSerializedProperties: 16
+  m_ValidKeywords:
+  - _ALBEDOMAP
+  - _COLORMODE_RANDOM
+  - _NORMALMAP
+  - _OCCLUSIONMAP
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _NormalMap:
+        m_Texture: {fileID: 2800000, guid: 912fe0350b83a4934aa3799ef6fced00, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 2800000, guid: c8fd564835bc6474c84c6798e7d7e2b5, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Metallic: 0.364
+    - _NormalScale: 2
+    - _Smoothness: 0.261
+    m_Colors:
+    - _Color: {r: 0.7352941, g: 0.7352941, b: 0.7352941, a: 1}
+    - _Color2: {r: 0.6985294, g: 0.45546156, b: 0.3235835, a: 1}
+  m_BuildTextureStacks: []
