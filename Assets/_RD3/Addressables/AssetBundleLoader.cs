@@ -8,7 +8,7 @@ namespace _RD3.Adressables
     public class AssetBundleLoader : MonoBehaviour
     {
         private string _prefabUrl =
-            "https://www.dropbox.com/scl/fi/tqyhp09tqvujlkyuarb0z/new-prefab?rlkey=qnmo3g5lyp6osvwqgx0lrls1w&st=csnpbike&dl=1";
+            "https://www.dropbox.com/s/6lu9mwishga8a8z/new%20prefab?st=yvxe9907&dl=1";
 
         private string _prefabName = "new prefab";
 

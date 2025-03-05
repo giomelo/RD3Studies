@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-namespace _RD3.Adressables
+namespace _RD3
 {
     public class AddressablesRemote : MonoBehaviour
     {
@@ -15,7 +15,6 @@ namespace _RD3.Adressables
 
         private void LoadRemoteAsset(string address)
         {
-            // Carrega o asset remotamente
             Addressables.LoadAssetAsync<GameObject>(address).Completed += OnAssetLoaded;
         }
 

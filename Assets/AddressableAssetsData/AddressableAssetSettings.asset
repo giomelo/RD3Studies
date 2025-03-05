@@ -15,9 +15,9 @@ MonoBehaviour:
   m_DefaultGroup: 80bef1e8d6e737249a4cb6983f88e3fb
   m_currentHash:
     serializedVersion: 2
-    Hash: 29fa28879a232bd4ea83255358504a8f
+    Hash: 4a1956a11fb2ebbee5a5a9f84991a22c
   m_OptimizeCatalogSize: 0
-  m_BuildRemoteCatalog: 0
+  m_BuildRemoteCatalog: 1
   m_BundleLocalCatalog: 0
   m_CatalogRequestsTimeout: 0
   m_DisableCatalogUpdateOnStart: 0
@@ -35,9 +35,9 @@ MonoBehaviour:
   m_CheckForContentUpdateRestrictionsOption: 0
   m_MonoScriptBundleCustomNaming: 
   m_RemoteCatalogBuildPath:
-    m_Id: acaef9c3dc21a6048b314be736afb421
+    m_Id: 2d50e445bdbf7f246b02daa79a093331
   m_RemoteCatalogLoadPath:
-    m_Id: 236748e2a9b1ea64cb98d5348202f7b0
+    m_Id: 1b0b002229786c84f906deee8d3e9eb3
   m_ContentStateBuildPathProfileVariableName: <default settings path>
   m_CustomContentStateBuildPath: 
   m_ContentStateBuildPath: 
@@ -66,7 +66,7 @@ MonoBehaviour:
       - m_Id: acaef9c3dc21a6048b314be736afb421
         m_Value: ServerData/[BuildTarget]
       - m_Id: 236748e2a9b1ea64cb98d5348202f7b0
-        m_Value: http://[PrivateIpAddress]:[HostingServicePort]
+        m_Value: http://rd3space.com/AppBundle/Addressables/[BuildTarget]
       - m_Id: afc5c3445a000a44f82461c9eacd19cf
         m_Value: C:/UnityProjects/RD3Editor/RD3Studies/Assets
       - m_Id: 9b6454f7b574833448d0915e9aaa1f2f
@@ -146,7 +146,7 @@ MonoBehaviour:
           m_Key: HostingServiceUploadSpeed
         - m_AssemblyName: mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
           m_ClassName: System.String
-          m_Data: Library/com.unity.addressables/aa/Windows/StandaloneWindows64
+          m_Data: ServerData/StandaloneWindows64
           m_Key: ContentRoot
         - m_AssemblyName: mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
           m_ClassName: System.Boolean

@@ -14,9 +14,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/PlayInstantLoadingScreen.unity
     guid: 97ae556c81690e84a82fafe5bb0f842a
-  - enabled: 1
+  - enabled: 0
     path: Assets/_RD3/CustomPath/ExampleScene.unity
     guid: 0e1bfeffe352b5b46b16b2c997345495
+  - enabled: 1
+    path: Assets/_RD3/Addressables/AdressablesTest.unity
+    guid: f3f1c809cb24bbb4bb9586b3f142e287
   m_configObjects:
     EasyAR.Settings: {fileID: 11400000, guid: 6273b1fa9b1e6554b8f51433a92ca757, type: 2}
     com.unity.addressableassets: {fileID: 11400000, guid: e0b75eb4bdd622d409de7ce99c294a1a,

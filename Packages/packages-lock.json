@@ -93,6 +93,15 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.inputsystem": {
+      "version": "1.7.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.uielements": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.mathematics": {
       "version": "1.2.6",
       "depth": 1,
@@ -202,12 +211,40 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "com.unity.visualscripting": {
+      "version": "1.9.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "jp.keijiro.klak.spout": {
       "version": "2.0.3",
       "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.modules.screencapture": "1.0.0"
+      },
+      "url": "https://registry.npmjs.com"
+    },
+    "jp.keijiro.osc-jack": {
+      "version": "2.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://registry.npmjs.com"
+    },
+    "jp.keijiro.osc-jack.visualscripting": {
+      "version": "2.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.visualscripting": "1.5.2",
+        "jp.keijiro.osc-jack": "2.0.0"
       },
       "url": "https://registry.npmjs.com"
     },

@@ -17,8 +17,23 @@ MonoBehaviour:
     m_SerializedData: []
   m_GUID: 80bef1e8d6e737249a4cb6983f88e3fb
   m_SerializeEntries:
+  - m_GUID: 31321ba15b8f8eb4c954353edc038b1d
+    m_Address: Packages/com.unity.render-pipelines.universal/Runtime/Materials/Lit.mat
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9875a245ac49007498213638a307faa1
+    m_Address: Packages/com.unity.render-pipelines.universal/Runtime/Materials/SpatialMappingWireframe.mat
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2c4e682f466c64245948d50c8eaf9c21
+    m_Address: Assets/_RD3/Addressables/Cow.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: aa189ad53feb5af45a6c7a557602ddb1
-    m_Address: Assets/_RD3/Adressables/New Prefab.prefab
+    m_Address: Assets/_RD3/Addressables/New Prefab.prefab
     m_ReadOnly: 0
     m_SerializedLabels:
     - test
