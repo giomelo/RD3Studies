@@ -28,7 +28,7 @@ namespace Klak.Midi
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof(KnobInput))]
-    public class KnobInputEditor : Editor
+    public class KnobInputEditor : UnityEditor.Editor
     {
         SerializedProperty _channel;
         SerializedProperty _knobNumber;

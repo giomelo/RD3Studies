@@ -12,7 +12,7 @@ namespace _RD3
         private void Start()
         {
            
-            UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(_assetLabelReference).Completed += (op) =>
+            Addressables.LoadAssetAsync<GameObject>(_assetLabelReference).Completed += (op) =>
             {
                 if (op.Status == AsyncOperationStatus.Succeeded)
                 {
@@ -21,7 +21,7 @@ namespace _RD3
                 else
                     Debug.LogError("Failed to load asset");
 
-                UnityEngine.AddressableAssets.Addressables.Release(op);
+                Addressables.Release(op);
             };
         }
     }

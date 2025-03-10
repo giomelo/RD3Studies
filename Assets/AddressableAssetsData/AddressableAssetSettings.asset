@@ -15,7 +15,7 @@ MonoBehaviour:
   m_DefaultGroup: 80bef1e8d6e737249a4cb6983f88e3fb
   m_currentHash:
     serializedVersion: 2
-    Hash: 4a1956a11fb2ebbee5a5a9f84991a22c
+    Hash: b688b8528b9c6747358d243201d56a18
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 1
   m_BundleLocalCatalog: 0
@@ -60,9 +60,9 @@ MonoBehaviour:
       - m_Id: 9a643e76a56f29949aa8b37be76713bf
         m_Value: '[UnityEditor.EditorUserBuildSettings.activeBuildTarget]'
       - m_Id: 2d50e445bdbf7f246b02daa79a093331
-        m_Value: '[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]'
+        m_Value: ServerData/[BuildTarget]
       - m_Id: 1b0b002229786c84f906deee8d3e9eb3
-        m_Value: '{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]'
+        m_Value: ServerData/[BuildTarget]
       - m_Id: acaef9c3dc21a6048b314be736afb421
         m_Value: ServerData/[BuildTarget]
       - m_Id: 236748e2a9b1ea64cb98d5348202f7b0
@@ -146,7 +146,7 @@ MonoBehaviour:
           m_Key: HostingServiceUploadSpeed
         - m_AssemblyName: mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
           m_ClassName: System.String
-          m_Data: ServerData/StandaloneWindows64
+          m_Data: Library/com.unity.addressables/aa/Windows/StandaloneWindows64
           m_Key: ContentRoot
         - m_AssemblyName: mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
           m_ClassName: System.Boolean

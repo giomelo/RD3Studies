@@ -12,10 +12,9 @@ namespace _RD3.CachedEditor
     }
     
     #if UNITY_EDITOR
-
     
     [CustomEditor(typeof(CachedEditor))]
-    public class CachedEditorEditor : Editor
+    public class CachedEditorEditor : UnityEditor.Editor
     {
         private CachedEditor _targetClass;
         private Editor _cachedEditor;

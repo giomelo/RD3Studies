@@ -28,7 +28,7 @@ namespace Klak.Midi
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof(NoteInput))]
-    public class NoteInputEditor : Editor
+    public class NoteInputEditor : UnityEditor.Editor
     {
         SerializedProperty _channel;
         SerializedProperty _noteFilter;

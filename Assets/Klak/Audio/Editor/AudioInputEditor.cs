@@ -5,7 +5,7 @@ namespace Klak.Audio
 {
     [CanEditMultipleObjects]
     [CustomEditor(typeof(AudioInput))]
-    public class AudioInputEditor : Editor
+    public class AudioInputEditor : UnityEditor.Editor
     {
         SerializedProperty _filterType;
         SerializedProperty _dynamicRange;

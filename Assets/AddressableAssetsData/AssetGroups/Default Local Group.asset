@@ -38,6 +38,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - test
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 41d599a4e69743f4d818df7008debe68
+    m_Address: Assets/_RD3/Addressables/Nina.fbx
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 39d3c077d03330b488990cbe0ea77bfe, type: 2}
   m_SchemaSet:
