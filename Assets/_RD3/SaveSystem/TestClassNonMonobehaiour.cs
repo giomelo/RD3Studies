@@ -6,15 +6,7 @@ namespace _RD3.SaveSystem
     {
         [SaveVariable]
         public float myFloat = 24.3f;
-        
-        public void Save()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void Load()
-        {
-            throw new System.NotImplementedException();
-        }
+        [SaveVariable]
+        public float myFloat2 = 5f;
     }
 }

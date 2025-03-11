@@ -5,10 +5,16 @@ using UnityEngine;
 
 namespace _RD3.SaveSystem
 {
+    public class TestStruct : ISavedObject
+    {
+        [SaveVariable]
+        public int myStructVariable;
+    }
+    
     public class TestScript : AbstractedSavableClass<MonoBehaviour>
     {
         [SaveVariable]
-        public string myString;
+        public Vector3 myVector;
         [SaveVariable]
         public List<string> myStringList;
     }

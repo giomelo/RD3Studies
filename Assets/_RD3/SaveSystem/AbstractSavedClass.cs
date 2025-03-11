@@ -10,15 +10,5 @@ namespace _RD3.SaveSystem
         {
             SaveSystem.Instance.AddObjectToList(this);
         }
-
-        public void Save()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Load()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

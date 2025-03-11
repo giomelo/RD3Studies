@@ -1,12 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using _RD3._Universal._Scripts.Utilities;
+using Newtonsoft.Json;
 using Refactor.Data.Variables;
 using UnityEditor;
 using UnityEngine;
@@ -15,7 +17,7 @@ using UnityEngine.UI;
 namespace _RD3.SaveSystem
 {
     [Serializable]
-    public enum SaveType
+    public enum SaveTypes
     {
         Binary,
         Json,
@@ -36,7 +38,7 @@ namespace _RD3.SaveSystem
         private static string saveKey ="";
 
         [SerializeField]private CryptSystem _cryptSystem;
-        [SerializeField]private SaveType _saveType;
+        [SerializeField]private SaveTypes _defaultSaveType = SaveTypes.TXT;
 
         [SerializeField]private int _currentSave;
         
@@ -46,7 +48,7 @@ namespace _RD3.SaveSystem
         {
             path = $"{Application.persistentDataPath}/save_{0}.save";
             if(saveKey=="")
-                saveKey = GenerateRandomKey();
+                saveKey = EncryptSystem.GenerateRandomKey();
             //  LoadGame(0);
             
             GetAllSavedObjects();
@@ -54,61 +56,7 @@ namespace _RD3.SaveSystem
 
         #endregion
         
-        #region Encryption
-
-        private static string GenerateRandomKey()
-        {
-            using var aes = Aes.Create();
-            aes.KeySize = 128;
-            aes.GenerateKey();
-            return Convert.ToBase64String(aes.Key);
-        }
-        private byte[] EncryptData(string plainText, string key)
-        {
-            using (Aes aesAlg = Aes.Create())
-            {
-                aesAlg.Key = Encoding.UTF8.GetBytes(key);
-                aesAlg.IV = new byte[16]; // You should use a different IV each time for security
-
-                ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
-
-                using (MemoryStream msEncrypt = new MemoryStream())
-                {
-                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-                    {
-                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
-                        {
-                            swEncrypt.Write(plainText);
-                        }
-                    }
-                    return msEncrypt.ToArray();
-                }
-            }
-        }
-        private string DecryptData(byte[] encryptedData, string key)
-        {
-            using (Aes aesAlg = Aes.Create())
-            {
-                aesAlg.Key = Encoding.UTF8.GetBytes(key);
-                aesAlg.IV = new byte[16]; // You should use a different IV each time for security
-
-                ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-
-                using (MemoryStream msDecrypt = new MemoryStream(encryptedData))
-                {
-                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-                    {
-                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
-                        {
-                            return srDecrypt.ReadToEnd();
-                        }
-                    }
-                }
-            }
-        }
-
-        #endregion
-
+        
         #region SaveMethods
 
         private bool HasSave(int slot)
@@ -138,7 +86,7 @@ namespace _RD3.SaveSystem
         public void LoadGame(int slot)
         {
             if(HasSave(slot))
-                Load(path);
+                Load();
         }
 
         private void SaveObjectState(object obj)
@@ -148,30 +96,39 @@ namespace _RD3.SaveSystem
                 Debug.LogError("The object passed to SaveObjectState is null.");
                 return;
             }
-
+            jsonObjects.Clear();
             FieldInfo[] fields = obj.GetType().GetFields().Where(field => field.IsDefined(typeof(SaveVariableAttribute), true)).ToArray();
+            //var fields = TypeCache.GetFieldsWithAttribute(typeof(SaveVariableAttribute)).ToArray();
+            if (fields.Length == 0) fields = obj.GetType().GetFields();
+            
             foreach (FieldInfo field in fields)
             {
-                object value = field.GetValue(obj);
-                if (value is IList list)
+                var saveTpe = _defaultSaveType;
+                var attribute = (SaveVariableAttribute)field.GetCustomAttribute(typeof(SaveVariableAttribute), true);
+                
+                if (attribute != null)
+                    if(attribute.saveType != default) saveTpe = attribute.saveType;
+                
+                switch (saveTpe)
                 {
-                    StringBuilder listValues = new StringBuilder();
-                    foreach (var item in list)
-                    {
-                        listValues.Append(item).Append(",");
-                    }
-                    if (listValues.Length > 0)
-                        listValues.Length--; // Remove the last comma
-                    SerializeToJson($"{field.Name}:[{listValues}]");
+                    case SaveTypes.Binary:
+                        break;
+                    case SaveTypes.Json:
+                      
+                        SaveFormatJson(field, obj);
+                        WriteOnFileJson();
+                        break;
+                    case SaveTypes.XML:
+                        break;
+                    case SaveTypes.TXT:
+                        SaveFormatTxt(field, obj);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
-                else
-                {
-                    SerializeToJson($"{field.Name}:{value}");
-                }
-                Debug.Log($"Field {field.Name} has SaveVariableAttribute value: {value}");
+               
             }
         }
-
         private void LoadObjectState(object obj)
         {
             if (obj == null)
@@ -180,30 +137,168 @@ namespace _RD3.SaveSystem
                 return;
             }
 
-            FieldInfo[] fields = obj.GetType().GetFields().Where(field => field.IsDefined(typeof(SaveVariableAttribute), true)).ToArray();
+            FieldInfo[] fields = obj.GetType().GetFields()
+                .Where(field => field.IsDefined(typeof(SaveVariableAttribute), true)).ToArray();
+
+            //var fields = TypeCache.GetFieldsWithAttribute(typeof(SaveVariableAttribute)).ToArray();
+            
+            if (fields.Length == 0) fields = obj.GetType().GetFields();
+            
             foreach (FieldInfo field in fields)
             {
-                string savedData = DeserializeFromJson(field.Name);
-                Debug.Log(savedData);
-                if (savedData.StartsWith("[") && savedData.EndsWith("]"))
+                var saveTpe = _defaultSaveType;
+                var attribute = (SaveVariableAttribute)field.GetCustomAttribute(typeof(SaveVariableAttribute), true);
+                if (attribute != null)
+                    if(attribute.saveType != default) saveTpe = attribute.saveType;
+                
+                switch (saveTpe)
                 {
-                    // Handle list deserialization
-                    string listData = savedData.Substring(1, savedData.Length - 2);
-                    string[] items = listData.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                    IList list = (IList)Activator.CreateInstance(field.FieldType);
-                    foreach (string item in items)
-                        list.Add(Convert.ChangeType(item, field.FieldType.GetGenericArguments()[0]));
-                    
-                    field.SetValue(obj, list);
+                    case SaveTypes.Binary:
+                        break;
+                    case SaveTypes.Json:
+                        LoadFormatJson(field, obj);
+                        break;
+                    case SaveTypes.XML:
+                        break;
+                    case SaveTypes.TXT:
+                        LoadFormatTxt(field, obj);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
-                else
-                {
-                    object value = Convert.ChangeType(savedData, field.FieldType);
-                    field.SetValue(obj, value);
-                }
-                Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
             }
         }
+        
+        #region TXT
+
+         private void SaveFormatTxt(FieldInfo field, object obj)
+        {
+            object value = field.GetValue(obj);
+            if (value is IList list)
+            {
+                StringBuilder listValues = new StringBuilder();
+                foreach (var item in list)
+                {
+                    listValues.Append(item).Append(",");
+                }
+                if (listValues.Length > 0)
+                    listValues.Length--; // Remove the last comma
+                WriteOnFile($"{field.Name}:[{listValues}]");
+            }
+            else
+            {
+                WriteOnFile($"{field.Name}:{value}");
+            }
+            Debug.Log($"Field {field.Name} has SaveVariableAttribute value: {value}");
+        }
+
+        private void LoadFormatTxt(FieldInfo field, object obj)
+        {
+            string savedData = GetFromFile(field.Name);
+            Debug.Log(savedData);
+            if (savedData.StartsWith("[") && savedData.EndsWith("]"))
+            {
+                // Handle list deserialization
+                string listData = savedData.Substring(1, savedData.Length - 2);
+                string[] items = listData.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                IList list = (IList)Activator.CreateInstance(field.FieldType);
+                foreach (string item in items)
+                    list.Add(Convert.ChangeType(item, field.FieldType.GetGenericArguments()[0]));
+
+                field.SetValue(obj, list);
+            }
+            else if (field.FieldType == typeof(Vector3))
+            {
+                // Handle Vector3 deserialization
+                string[] components = savedData.Trim('(', ')').Split(',');
+                if (components.Length == 3)
+                {
+                    float x = float.Parse(components[0], CultureInfo.InvariantCulture);
+                    float y = float.Parse(components[1], CultureInfo.InvariantCulture);
+                    float z = float.Parse(components[2], CultureInfo.InvariantCulture);
+                    Vector3 vector = new Vector3(x, y, z);
+                    field.SetValue(obj, vector);
+                }
+            }
+            else if (field.FieldType == typeof(Vector2))
+            {
+                // Handle Vector2 deserialization
+                string[] components = savedData.Trim('(', ')').Split(',');
+                if (components.Length == 2)
+                {
+                    float x = float.Parse(components[0], CultureInfo.InvariantCulture);
+                    float y = float.Parse(components[1], CultureInfo.InvariantCulture);
+                    Vector2 vector = new Vector2(x, y);
+                    field.SetValue(obj, vector);
+                }
+            }
+            else
+            {
+                object value = Convert.ChangeType(savedData, field.FieldType);
+                field.SetValue(obj, value);
+            }
+
+            Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
+        }
+
+        #endregion
+
+        #region JSON
+
+
+        private class JsonObject
+        {
+            public string Name { get; set; }
+            public object Value { get; set; }
+            public JsonObject(string name, object value)
+            {
+                Name = name;
+                Value = value;
+            }
+        }
+        
+        private void SaveFormatJson(FieldInfo field, object obj)
+        {
+            object value = field.GetValue(obj);
+            JsonObject wrapper = new JsonObject(field.Name, value);
+            jsonObjects.Add(wrapper);
+            Debug.Log($"Field {field.Name} has SaveVariableAttribute value: {value}");
+        }
+
+        private void LoadFormatJson(FieldInfo field, object obj)
+        {
+            string json = File.ReadAllText(path);
+            List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json);
+
+            foreach (var jsonObject in jsonObjects)
+            {
+                if(field.Name != jsonObject.Name) continue;
+                
+                object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
+                field.SetValue(obj, convertedValue);
+            }
+            Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
+        }
+        private object ConvertValue(object value, Type targetType)
+        {
+            if (value == null) return null;
+
+            if (targetType == typeof(int)) return Convert.ToInt32(value);
+            if (targetType == typeof(float)) return Convert.ToSingle(value);
+            if (targetType == typeof(bool)) return Convert.ToBoolean(value);
+            if (targetType == typeof(string)) return value.ToString();
+            
+            if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>)) return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value), targetType);
+
+            if (targetType == typeof(Vector3)) return JsonConvert.DeserializeObject<Vector3>(value.ToString());
+            if (targetType == typeof(Vector2)) return JsonConvert.DeserializeObject<Vector2>(value.ToString());
+            if (targetType == typeof(Vector4)) return JsonConvert.DeserializeObject<Vector4>(value.ToString());
+            
+            return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value), targetType);
+        }
+        #endregion
+       
+        
 
         private void GetAllSavedObjects()
         {
@@ -247,7 +342,7 @@ namespace _RD3.SaveSystem
                 SaveObjectState(savableObject);
             }
         }
-        private void Load(string filePath)
+        private void Load()
         {
             var currentSaveDirectory = GetSavePath(_currentSave);
             if (!Directory.Exists(currentSaveDirectory))
@@ -263,29 +358,29 @@ namespace _RD3.SaveSystem
                 LoadObjectState(savableObject);
             }
         }
-    
-    
         
         
         StringBuilder sb = new StringBuilder(); 
-        private void SerializeToJson(string lineToAppend)
+        List<JsonObject> jsonObjects = new List<JsonObject>();
+        private void WriteOnFile(string lineToAppend)
         {
-            
-          //  string[] data = new string[variablesToSave.Count];
-
-            /*for(int i = 0; i < data.Length; i ++)
-            {    
-                data[i] = variablesToSave[i].ToJson();
-                sb.AppendLine(data[i]);
-            }*/
             sb.AppendLine(lineToAppend);
             using FileStream fs = new FileStream(path, FileMode.Create);
-            //using BinaryWriter writer = new BinaryWriter(fs);
             using StreamWriter writer = new StreamWriter(fs);
-            //  byte[] encryptedData = EncryptData(SerializeToJson(), saveKey);
             writer.Write(sb.ToString());
         }
-        private string DeserializeFromJson(string fieldName)
+        
+        private void WriteOnFileJson()
+        {
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+
+            string json = JsonConvert.SerializeObject(jsonObjects, Formatting.Indented,settings);
+            File.WriteAllText(path, json);
+        }
+        private string GetFromFile(string fieldName)
         {
             using FileStream fs = new FileStream(path, FileMode.Open);
             using StreamReader reader = new StreamReader(fs);
@@ -299,7 +394,6 @@ namespace _RD3.SaveSystem
             }
             return null; 
         }
-       
 
         public void AddObjectToList(ISavedObject obj)
         {
@@ -317,6 +411,7 @@ namespace _RD3.SaveSystem
     public class SceneLoaderControllerEditor : UnityEditor.Editor
     {
         private SaveSystem data;
+
         private void OnEnable()
         {
             data = (SaveSystem)target;
@@ -341,7 +436,7 @@ namespace _RD3.SaveSystem
                 data.path = $"{Application.persistentDataPath}/save_{0}.save";
                 data.DeleteSave(0);
             }
-            
+
         }
     }
 #endif
