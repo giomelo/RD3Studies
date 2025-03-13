@@ -16,6 +16,6 @@ namespace _RD3.SaveSystem
         [SaveVariable]
         public Vector3 myVector;
         [SaveVariable]
-        public List<string> myStringList;
+        public List<Vector3> myStringList;
     }
 }

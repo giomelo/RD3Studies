@@ -272,8 +272,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   myVector: {x: 2.28, y: 4.21, z: 0}
   myStringList:
-  - teste
-  - test222
+  - {x: 1, y: 2, z: 5}
+  - {x: 0, y: 7, z: 4}
 --- !u!4 &977321793
 Transform:
   m_ObjectHideFlags: 0
@@ -321,7 +321,7 @@ MonoBehaviour:
   variablesToSave: []
   path: C:/Users/giova/AppData/LocalLow/DefaultCompany/RD3Estudos/save_0
   _cryptSystem: 0
-  _defaultSaveType: 0
+  _defaultSaveType: 2
   currentSave: 0
 --- !u!4 &1553226465
 Transform:

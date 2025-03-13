@@ -8,6 +8,8 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml;
+using System.Xml.Serialization;
 using _RD3._Universal._Scripts.Utilities;
 using Newtonsoft.Json;
 using Refactor.Data.Variables;
@@ -15,6 +17,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
+using Formatting = Newtonsoft.Json.Formatting;
 
 namespace _RD3.SaveSystem
 {
@@ -112,7 +115,14 @@ namespace _RD3.SaveSystem
                     if(attribute.saveType != default) saveTpe = attribute.saveType;
                 
                 var currentSaveDirectory = GetSavePath(currentSave);
-                var fileType = saveTpe == SaveTypes.Binary ? "bin" : "save";
+                string fileType = saveTpe switch
+                {
+                    SaveTypes.Binary => "bin",
+                    SaveTypes.Json => "json",
+                    SaveTypes.XML => "xml",
+                    SaveTypes.TXT => "txt",
+                    _ => throw new ArgumentOutOfRangeException()
+                };
                 path = Path.Combine(currentSaveDirectory, $"{obj.GetType().Name}.{fileType}");
                 switch (saveTpe)
                 {
@@ -125,6 +135,8 @@ namespace _RD3.SaveSystem
                         WriteOnFileJson();
                         break;
                     case SaveTypes.XML:
+                        SaveFormatJson(field, obj);
+                        WriteOnFileXmlBinary();
                         break;
                     case SaveTypes.TXT:
                         SaveFormatTxt(field, obj);
@@ -158,7 +170,14 @@ namespace _RD3.SaveSystem
                     if(attribute.saveType != default) saveTpe = attribute.saveType;
                 
                 var currentSaveDirectory = GetSavePath(currentSave);
-                var fileType = saveTpe == SaveTypes.Binary ? "bin" : "save";
+                string fileType = saveTpe switch
+                {
+                    SaveTypes.Binary => "bin",
+                    SaveTypes.Json => "json",
+                    SaveTypes.XML => "xml",
+                    SaveTypes.TXT => "txt",
+                    _ => throw new ArgumentOutOfRangeException()
+                };
                 path = Path.Combine(currentSaveDirectory, $"{obj.GetType().Name}.{fileType}");
                 switch (saveTpe)
                 {
@@ -169,6 +188,7 @@ namespace _RD3.SaveSystem
                         LoadFormatJson(field, obj);
                         break;
                     case SaveTypes.XML:
+                        LoadFormatXml(field, obj);
                         break;
                     case SaveTypes.TXT:
                         LoadFormatTxt(field, obj);
@@ -255,16 +275,29 @@ namespace _RD3.SaveSystem
 
         #region JSON
 
-
-        private class JsonObject
+        [XmlInclude(typeof(Vector3))]
+        [XmlInclude(typeof(Vector2))]
+        [XmlInclude(typeof(Vector4))]
+        [XmlInclude(typeof(List<string>))]
+        [XmlInclude(typeof(List<int>))]
+        [XmlInclude(typeof(List<bool>))]
+        [XmlInclude(typeof(List<float>))]
+        [XmlInclude(typeof(List<Vector3>))]
+        [XmlInclude(typeof(List<Vector2>))]
+        [XmlInclude(typeof(List<Vector4>))]
+        [XmlInclude(typeof(List<Vector4>))]
+        public class JsonObject
         {
             public string Name { get; set; }
             public object Value { get; set; }
             public JsonObject(string name, object value)
             {
                 Name = name;
+             //   Value = JsonConvert.SerializeObject(value);
                 Value = value;
             }
+            
+            public JsonObject() { }
         }
         
         private void SaveFormatJson(FieldInfo field, object obj)
@@ -292,20 +325,61 @@ namespace _RD3.SaveSystem
         private object ConvertValue(object value, Type targetType)
         {
             if (value == null) return null;
-
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+            // Conversões simples para tipos primitivos
             if (targetType == typeof(int)) return Convert.ToInt32(value);
             if (targetType == typeof(float)) return Convert.ToSingle(value);
             if (targetType == typeof(bool)) return Convert.ToBoolean(value);
             if (targetType == typeof(string)) return value.ToString();
-            
-            if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>)) return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value), targetType);
 
-            if (targetType == typeof(Vector3)) return JsonConvert.DeserializeObject<Vector3>(value.ToString());
-            if (targetType == typeof(Vector2)) return JsonConvert.DeserializeObject<Vector2>(value.ToString());
-            if (targetType == typeof(Vector4)) return JsonConvert.DeserializeObject<Vector4>(value.ToString());
-            
-            return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value), targetType);
+            // Verifica se é uma lista genérica
+            if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>))
+                return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value,Formatting.Indented,settings), targetType);
+
+            // Tratamento para Vector3 (esperando um XML com as tags <x>, <y>, <z>)
+            if (targetType == typeof(Vector3))
+            {
+                if (value is XmlNode node)
+                {
+                    float x = float.Parse(node["x"].InnerText);
+                    float y = float.Parse(node["y"].InnerText);
+                    float z = float.Parse(node["z"].InnerText);
+                    return new Vector3(x, y, z);
+                }
+            }
+
+            // Tratamento para Vector2 (esperando <x>, <y>)
+            if (targetType == typeof(Vector2))
+            {
+                if (value is XmlNode node)
+                {
+                    float x = float.Parse(node["x"].InnerText);
+                    float y = float.Parse(node["y"].InnerText);
+                    return new Vector2(x, y);
+                }
+            }
+
+            // Tratamento para Vector4 (esperando <x>, <y>, <z>, <w>)
+            if (targetType == typeof(Vector4))
+            {
+                if (value is XmlNode node)
+                {
+                    float x = float.Parse(node["x"].InnerText);
+                    float y = float.Parse(node["y"].InnerText);
+                    float z = float.Parse(node["z"].InnerText);
+                    float w = float.Parse(node["w"].InnerText);
+                    return new Vector4(x, y, z, w);
+                }
+            }
+
+            // Caso genérico para outros tipos
+            return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value, Formatting.Indented,settings), targetType);
         }
+        
+        
         #endregion
        
         #region Binary
@@ -331,6 +405,28 @@ namespace _RD3.SaveSystem
             Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
         }
         
+        #endregion
+        
+        #region XML
+        
+        private void LoadFormatXml(FieldInfo field, object obj)
+        {
+            using FileStream fs = new FileStream(path, FileMode.Open);
+            using StreamReader reader = new StreamReader(fs);
+
+            XmlSerializer serializer = new XmlSerializer(typeof(List<JsonObject>));
+            List<JsonObject> jsonObjects = (List<JsonObject>)serializer.Deserialize(reader);
+
+            foreach (var jsonObject in jsonObjects)
+            {
+                if (field.Name != jsonObject.Name) continue;
+
+                object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
+                field.SetValue(obj, convertedValue);
+            }
+
+            Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
+        }
         #endregion
 
         private void GetAllSavedObjects()
@@ -410,6 +506,15 @@ namespace _RD3.SaveSystem
             string json = JsonConvert.SerializeObject(jsonObjects, Formatting.Indented,settings);
             File.WriteAllText(path, json);
         }
+        
+        private void WriteOnFileXmlBinary()
+        {
+            using FileStream fs = new FileStream(path, FileMode.Create);
+            using StreamWriter writer = new StreamWriter(fs);
+
+            XmlSerializer serializer = new XmlSerializer(typeof(List<JsonObject>));
+            serializer.Serialize(writer, jsonObjects);
+        }
 
         private void WriteOnFileJsonBinary()
         {
@@ -424,8 +529,6 @@ namespace _RD3.SaveSystem
 
             string json = JsonConvert.SerializeObject(jsonObjects, Formatting.None, settings);
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
-
-           // writer.Write(jsonBytes.Length);
             writer.Write(jsonBytes);
         }
         private string GetFromFile(string fieldName)
