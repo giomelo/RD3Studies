@@ -17,7 +17,7 @@ namespace _RD3.SaveSystem
             aes.GenerateKey();
             return Convert.ToBase64String(aes.Key);
         }
-        private static byte[] EncryptData(string plainText, string key)
+        private static byte[] EncryptDataAes(string plainText, string key)
         {
             using (Aes aesAlg = Aes.Create())
             {

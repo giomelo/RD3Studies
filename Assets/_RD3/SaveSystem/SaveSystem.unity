@@ -270,7 +270,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c049c1e36b7f442693b31ba10e24ac22, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  myVector: {x: 2.28, y: 3.48, z: 0}
+  myVector: {x: 2.28, y: 4.21, z: 0}
   myStringList:
   - teste
   - test222
@@ -319,10 +319,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   variablesToSave: []
-  path: C:/Users/giova/AppData/LocalLow/DefaultCompany/RD3Estudos/save_0.save
+  path: C:/Users/giova/AppData/LocalLow/DefaultCompany/RD3Estudos/save_0
   _cryptSystem: 0
-  _defaultSaveType: 1
-  _currentSave: 0
+  _defaultSaveType: 0
+  currentSave: 0
 --- !u!4 &1553226465
 Transform:
   m_ObjectHideFlags: 0

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -12,6 +13,7 @@ using Newtonsoft.Json;
 using Refactor.Data.Variables;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace _RD3.SaveSystem
@@ -40,7 +42,7 @@ namespace _RD3.SaveSystem
         [SerializeField]private CryptSystem _cryptSystem;
         [SerializeField]private SaveTypes _defaultSaveType = SaveTypes.TXT;
 
-        [SerializeField]private int _currentSave;
+        public int currentSave;
         
         #region Monobeheviour
 
@@ -69,7 +71,7 @@ namespace _RD3.SaveSystem
         }
         public void SaveGame(int slot)
         {
-            Save(_currentSave);
+            Save();
         }
 
         public void DeleteSave(int slot)
@@ -109,12 +111,16 @@ namespace _RD3.SaveSystem
                 if (attribute != null)
                     if(attribute.saveType != default) saveTpe = attribute.saveType;
                 
+                var currentSaveDirectory = GetSavePath(currentSave);
+                var fileType = saveTpe == SaveTypes.Binary ? "bin" : "save";
+                path = Path.Combine(currentSaveDirectory, $"{obj.GetType().Name}.{fileType}");
                 switch (saveTpe)
                 {
                     case SaveTypes.Binary:
+                        SaveFormatJson(field, obj);
+                        WriteOnFileJsonBinary();
                         break;
                     case SaveTypes.Json:
-                      
                         SaveFormatJson(field, obj);
                         WriteOnFileJson();
                         break;
@@ -151,9 +157,13 @@ namespace _RD3.SaveSystem
                 if (attribute != null)
                     if(attribute.saveType != default) saveTpe = attribute.saveType;
                 
+                var currentSaveDirectory = GetSavePath(currentSave);
+                var fileType = saveTpe == SaveTypes.Binary ? "bin" : "save";
+                path = Path.Combine(currentSaveDirectory, $"{obj.GetType().Name}.{fileType}");
                 switch (saveTpe)
                 {
                     case SaveTypes.Binary:
+                        LoadFormatBinary(field, obj);
                         break;
                     case SaveTypes.Json:
                         LoadFormatJson(field, obj);
@@ -298,7 +308,30 @@ namespace _RD3.SaveSystem
         }
         #endregion
        
+        #region Binary
         
+        private void LoadFormatBinary(FieldInfo field, object obj)
+        {
+            using FileStream fs = new FileStream(path, FileMode.Open);
+            using GZipStream gzip = new GZipStream(fs, CompressionMode.Decompress);
+            using StreamReader reader = new StreamReader(gzip);
+    
+            string json = reader.ReadToEnd();
+    
+            List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json);
+
+            foreach (var jsonObject in jsonObjects)
+            {
+                if (field.Name != jsonObject.Name) continue;
+
+                object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
+                field.SetValue(obj, convertedValue);
+            }
+
+            Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
+        }
+        
+        #endregion
 
         private void GetAllSavedObjects()
         {
@@ -330,21 +363,19 @@ namespace _RD3.SaveSystem
             return currentSaveDirectory;
         }
         private List<ISavedObject> _savedObjects = new List<ISavedObject>();
-        private void Save(int slot)
+        private void Save()
         {
-            var currentSaveDirectory = GetSavePath(slot);
+            var currentSaveDirectory = GetSavePath(currentSave);
             Directory.CreateDirectory(currentSaveDirectory);
-        
             foreach (var savableObject in _savedObjects)
             {
                 sb.Clear();
-                path = Path.Combine(currentSaveDirectory, $"{savableObject.GetType().Name}.save");
                 SaveObjectState(savableObject);
             }
         }
         private void Load()
         {
-            var currentSaveDirectory = GetSavePath(_currentSave);
+            var currentSaveDirectory = GetSavePath(currentSave);
             if (!Directory.Exists(currentSaveDirectory))
             {
                 Debug.LogError("No save found at " + currentSaveDirectory);
@@ -354,7 +385,6 @@ namespace _RD3.SaveSystem
             foreach (var savableObject in _savedObjects)
             {
                 sb.Clear();
-                path = Path.Combine(currentSaveDirectory, $"{savableObject.GetType().Name}.save");
                 LoadObjectState(savableObject);
             }
         }
@@ -379,6 +409,24 @@ namespace _RD3.SaveSystem
 
             string json = JsonConvert.SerializeObject(jsonObjects, Formatting.Indented,settings);
             File.WriteAllText(path, json);
+        }
+
+        private void WriteOnFileJsonBinary()
+        {
+            using FileStream fs = new FileStream(path, FileMode.Create);
+            using GZipStream gzip = new GZipStream(fs, CompressionMode.Compress);
+            using BinaryWriter writer = new BinaryWriter(gzip);
+
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+
+            string json = JsonConvert.SerializeObject(jsonObjects, Formatting.None, settings);
+            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+
+           // writer.Write(jsonBytes.Length);
+            writer.Write(jsonBytes);
         }
         private string GetFromFile(string fieldName)
         {
@@ -420,7 +468,7 @@ namespace _RD3.SaveSystem
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-            data.path = $"{Application.persistentDataPath}/save_{0}.save";
+            data.path = $"{Application.persistentDataPath}/save_{data.currentSave}";
             if (GUILayout.Button("Save"))
             {
                 data.SaveGame(0);
@@ -433,7 +481,7 @@ namespace _RD3.SaveSystem
 
             if (GUILayout.Button("Delete Save"))
             {
-                data.path = $"{Application.persistentDataPath}/save_{0}.save";
+                data.path = $"{Application.persistentDataPath}/save_{data.currentSave}";
                 data.DeleteSave(0);
             }
 
