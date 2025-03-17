@@ -2,13 +2,20 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using _RD3._Universal._Scripts.Utilities;
+using UnityEngine;
 
 namespace _RD3.SaveSystem
 {
-    public static class EncryptSystem
+    public class EncryptSystem : Singleton<EncryptSystem>
     {
-        
-        #region Encryption
+        private static string key = "";
+        private static bool hasGeneratedKey;
+        private void Start()
+        {
+            key = !PlayerPrefs.HasKey("Key") ? GenerateRandomKey() : PlayerPrefs.GetString("Key");
+            PlayerPrefs.SetString("Key", key);
+        }
 
         public static string GenerateRandomKey()
         {
@@ -17,7 +24,7 @@ namespace _RD3.SaveSystem
             aes.GenerateKey();
             return Convert.ToBase64String(aes.Key);
         }
-        private static byte[] EncryptDataAes(string plainText, string key)
+        public byte[] EncryptDataAes(string plainText)
         {
             using (Aes aesAlg = Aes.Create())
             {
@@ -39,7 +46,7 @@ namespace _RD3.SaveSystem
                 }
             }
         }
-        private static string DecryptData(byte[] encryptedData, string key)
+        public string DecryptData(byte[] encryptedData)
         {
             using (Aes aesAlg = Aes.Create())
             {
@@ -60,8 +67,7 @@ namespace _RD3.SaveSystem
                 }
             }
         }
-
-        #endregion
+        
 
     }
 }

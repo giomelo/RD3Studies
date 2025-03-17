@@ -299,6 +299,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1553226465}
   - component: {fileID: 1553226464}
+  - component: {fileID: 1553226466}
   m_Layer: 0
   m_Name: Save
   m_TagString: Untagged
@@ -321,7 +322,7 @@ MonoBehaviour:
   variablesToSave: []
   path: C:/Users/giova/AppData/LocalLow/DefaultCompany/RD3Estudos/save_0
   _cryptSystem: 0
-  _defaultSaveType: 2
+  _defaultSaveType: 3
   currentSave: 0
 --- !u!4 &1553226465
 Transform:
@@ -338,6 +339,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1553226466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1553226463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e37005c583344de999220a0bab935a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1790097215
 GameObject:
   m_ObjectHideFlags: 0
