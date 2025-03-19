@@ -9,6 +9,15 @@ namespace _RD3.SaveSystem
     {
         [SaveVariable]
         public int myStructVariable;
+
+        public TestStruct(int myStructVariable)
+        {
+            this.myStructVariable = myStructVariable;
+        }
+        public TestStruct()
+        {
+            
+        }
     }
     
     public class TestScript : AbstractedSavableClass<MonoBehaviour>

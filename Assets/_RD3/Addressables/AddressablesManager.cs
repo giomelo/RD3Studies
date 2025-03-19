@@ -21,7 +21,7 @@ namespace _RD3
                 else
                     Debug.LogError("Failed to load asset");
 
-                Addressables.Release(op);
+                //Addressables.Release(op);
             };
         }
     }

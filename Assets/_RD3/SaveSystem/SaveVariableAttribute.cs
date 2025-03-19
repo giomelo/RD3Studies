@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+
 using System;
 using _RD3.SaveSystem;
 
@@ -18,4 +18,3 @@ namespace _RD3._Universal._Scripts.Utilities
     }
 }
 
-#endif

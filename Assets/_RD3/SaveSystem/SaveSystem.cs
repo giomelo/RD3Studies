@@ -54,8 +54,6 @@ namespace _RD3.SaveSystem
         private void Start()
         {
             path = $"{Application.persistentDataPath}/save_{0}.save";
-            //  LoadGame(0);
-
             GetAllSavedObjects();
         }
 
@@ -258,10 +256,10 @@ namespace _RD3.SaveSystem
 
                 if (listValues.Length > 0)
                     listValues.Length--;
-                WriteOnFile($"{field.Name}:[{listValues}]");
+                WriteOnFile($"{field.Name}:[{listValues}];");
             }
             else
-                WriteOnFile($"{field.Name}:{value}");
+                WriteOnFile($"{field.Name}:{value};");
 
             Debug.Log($"Field {field.Name} has SaveVariableAttribute value: {value}");
         }
@@ -272,37 +270,24 @@ namespace _RD3.SaveSystem
 
             Debug.Log(savedData);
 
-            if (savedData.StartsWith("[") && savedData.EndsWith("]")) // Caso seja uma lista
+            if (savedData.StartsWith("[") && savedData.EndsWith("]")) 
             {
-                string listData = savedData.Substring(1, savedData.Length - 2); // Remove os colchetes
+                string listData = savedData.Substring(1, savedData.Length - 2);
                 string[] items = Regex.Matches(listData, @"\((.*?)\)")
-                    .Cast<Match>()
                     .Select(m => m.Groups[1].Value)
                     .ToArray();
 
                 IList list = (IList)Activator.CreateInstance(field.FieldType);
-                Type elementType = field.FieldType.GetGenericArguments()[0]; // Tipo da lista (ex: Vector3, int, float)
+                Type elementType = field.FieldType.GetGenericArguments()[0];
 
                 foreach (string item in items)
                 {
                     object convertedItem;
-
-                    if (elementType == typeof(Vector3))
-                    {
-                        convertedItem = ParseVector3(item);
-                    }
-                    else if (elementType == typeof(Vector2))
-                    {
-                        convertedItem = ParseVector2(item);
-                    }
-                    else if (elementType == typeof(Vector4))
-                    {
-                        convertedItem = ParseVector4(item);
-                    }
-                    else
-                    {
-                        convertedItem = Convert.ChangeType(item, elementType, CultureInfo.InvariantCulture);
-                    }
+                    Debug.Log(item);
+                    if (elementType == typeof(Vector3)) convertedItem = ParseVector3(item);
+                    else if (elementType == typeof(Vector2)) convertedItem = ParseVector2(item);
+                    else if (elementType == typeof(Vector4)) convertedItem = ParseVector4(item);
+                    else convertedItem = Convert.ChangeType(item, elementType, CultureInfo.InvariantCulture);
 
                     list.Add(convertedItem);
                 }
@@ -310,9 +295,7 @@ namespace _RD3.SaveSystem
                 field.SetValue(obj, list);
             }
             else if (field.FieldType == typeof(Vector3)) field.SetValue(obj, ParseVector3(savedData.Trim('(', ')')));
-            
             else if (field.FieldType == typeof(Vector2)) field.SetValue(obj, ParseVector2(savedData.Trim('(', ')')));
-            
             else if (field.FieldType == typeof(Vector4)) field.SetValue(obj, ParseVector4(savedData.Trim('(', ')')));
             
             else
@@ -326,44 +309,41 @@ namespace _RD3.SaveSystem
         
         private Vector3 ParseVector3(string input)
         {
-            string[] components = input.Split(',');
-            if (components.Length == 3)
-            {
-                float x = float.Parse(components[0], CultureInfo.InvariantCulture);
-                float y = float.Parse(components[1], CultureInfo.InvariantCulture);
-                float z = float.Parse(components[2], CultureInfo.InvariantCulture);
-                return new Vector3(x, y, z);
-            }
+            input = input.Trim('(', ')').Trim();
 
-            throw new FormatException("Formato inválido para Vector3: " + input);
+            string[] components = input.Split(',');
+            if (components.Length != 3)
+                throw new FormatException("Formato inválido para Vector3: " + input);
+
+            float x = float.Parse(components[0], CultureInfo.InvariantCulture);
+            float y = float.Parse(components[1], CultureInfo.InvariantCulture);
+            float z = float.Parse(components[2], CultureInfo.InvariantCulture);
+            return new Vector3(x, y, z);
         }
+
 
         private Vector2 ParseVector2(string input)
         {
             string[] components = input.Split(',');
-            if (components.Length == 2)
-            {
-                float x = float.Parse(components[0], CultureInfo.InvariantCulture);
-                float y = float.Parse(components[1], CultureInfo.InvariantCulture);
-                return new Vector2(x, y);
-            }
+            if (components.Length != 2) throw new FormatException("Formato inválido para Vector2: " + input);
+            
+            float x = float.Parse(components[0], CultureInfo.InvariantCulture);
+            float y = float.Parse(components[1], CultureInfo.InvariantCulture);
+            return new Vector2(x, y);
 
-            throw new FormatException("Formato inválido para Vector2: " + input);
         }
 
         private Vector4 ParseVector4(string input)
         {
             string[] components = input.Split(',');
-            if (components.Length == 4)
-            {
-                float x = float.Parse(components[0], CultureInfo.InvariantCulture);
-                float y = float.Parse(components[1], CultureInfo.InvariantCulture);
-                float z = float.Parse(components[2], CultureInfo.InvariantCulture);
-                float w = float.Parse(components[3], CultureInfo.InvariantCulture);
-                return new Vector4(x, y, z, w);
-            }
+            if (components.Length != 4) throw new FormatException("Formato inválido para Vector4: " + input);
+            
+            float x = float.Parse(components[0], CultureInfo.InvariantCulture);
+            float y = float.Parse(components[1], CultureInfo.InvariantCulture);
+            float z = float.Parse(components[2], CultureInfo.InvariantCulture);
+            float w = float.Parse(components[3], CultureInfo.InvariantCulture);
+            return new Vector4(x, y, z, w);
 
-            throw new FormatException("Formato inválido para Vector4: " + input);
         }
         
 
@@ -409,9 +389,9 @@ namespace _RD3.SaveSystem
 
         private void LoadFormatJson(FieldInfo field, object obj)
         {
-            string json = File.ReadAllText(path);
+            string json = ReadAndDecryptFile(false);
             List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json);
-
+        
             foreach (var jsonObject in jsonObjects)
             {
                 if (field.Name != jsonObject.Name) continue;
@@ -489,12 +469,12 @@ namespace _RD3.SaveSystem
 
         private void LoadFormatBinary(FieldInfo field, object obj)
         {
-            using FileStream fs = new FileStream(path, FileMode.Open);
+            /*using FileStream fs = new FileStream(path, FileMode.Open);
             using GZipStream gzip = new GZipStream(fs, CompressionMode.Decompress);
-            using StreamReader reader = new StreamReader(gzip);
+            using StreamReader reader = new StreamReader(gzip);*/
 
-            string json = reader.ReadToEnd();
-
+            string json = ReadAndDecryptFile(true);
+            Debug.Log(json);
             List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json);
 
             foreach (var jsonObject in jsonObjects)
@@ -506,7 +486,9 @@ namespace _RD3.SaveSystem
             }
 
             Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
+
         }
+
 
         #endregion
 
@@ -514,21 +496,36 @@ namespace _RD3.SaveSystem
 
         private void LoadFormatXml(FieldInfo field, object obj)
         {
-            using FileStream fs = new FileStream(path, FileMode.Open);
-            using StreamReader reader = new StreamReader(fs);
+            string xmlContent = ReadAndDecryptFile(false);
 
-            XmlSerializer serializer = new XmlSerializer(typeof(List<JsonObject>));
-            List<JsonObject> jsonObjects = (List<JsonObject>)serializer.Deserialize(reader);
-
-            foreach (var jsonObject in jsonObjects)
+            if (string.IsNullOrEmpty(xmlContent))
             {
-                if (field.Name != jsonObject.Name) continue;
-
-                object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
-                field.SetValue(obj, convertedValue);
+                Debug.LogError("Erro ao carregar o XML: conteúdo vazio ou falha na leitura.");
+                return;
             }
 
-            Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
+            Debug.Log($"XML carregado:\n{xmlContent}"); // Log para verificar se o XML é válido
+
+            try
+            {
+                using StringReader stringReader = new StringReader(xmlContent);
+                XmlSerializer serializer = new XmlSerializer(typeof(List<JsonObject>));
+                List<JsonObject> jsonObjects = (List<JsonObject>)serializer.Deserialize(stringReader);
+
+                foreach (var jsonObject in jsonObjects)
+                {
+                    if (field.Name != jsonObject.Name) continue;
+
+                    object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
+                    field.SetValue(obj, convertedValue);
+                }
+
+                Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Erro ao desserializar o XML: {ex.Message}");
+            }
         }
 
         #endregion
@@ -572,16 +569,21 @@ namespace _RD3.SaveSystem
         {
             if (string.IsNullOrEmpty(decryptedData))
             {
-                decryptedData = ReadAndDecryptFile();
+                decryptedData = ReadAndDecryptFile(false);
             }
-
+            Debug.Log(decryptedData);
+            //trtara para adicionar a qubra de linha ao achar o valor ;
+            if(_cryptSystem == CryptSystem.AES)
+            {
+                decryptedData = decryptedData.Replace(";","\n");
+            }
             return ExtractFieldValue(decryptedData, fieldName);
         }
 
         /// <summary>
         /// Lê e descriptografa o arquivo, dependendo do método de criptografia utilizado.
         /// </summary>
-        private string ReadAndDecryptFile()
+        private string ReadAndDecryptFile(bool readBytes)
         {
             if (!File.Exists(path))
             {
@@ -592,32 +594,40 @@ namespace _RD3.SaveSystem
             switch (_cryptSystem)
             {
                 case CryptSystem.None:
+                    if (readBytes)
+                    {
+                        // Apenas descompacta se NÃO for criptografado
+                        using FileStream fs = new FileStream(path, FileMode.Open);
+                        using GZipStream gzip = new GZipStream(fs, CompressionMode.Decompress);
+                        using StreamReader reader = new StreamReader(gzip);
+                        return reader.ReadToEnd();
+                    }
                     return File.ReadAllText(path);
 
                 case CryptSystem.AES:
-                    return ReadEncryptedFile();
+                    return ReadEncryptedFile(readBytes);
 
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        /// <summary>
-        /// Lê um arquivo criptografado e retorna o conteúdo descriptografado.
-        /// </summary>
-        private string ReadEncryptedFile()
-        {
-            List<string> decryptedList = new List<string>();
 
+        private string ReadEncryptedFile(bool readBytes)
+        {
             try
             {
                 using (FileStream fss = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
                 using (BinaryReader reader = new BinaryReader(fss))
                 {
+                    List<byte> decryptedBytes = new List<byte>();
+
                     while (reader.BaseStream.Position < reader.BaseStream.Length)
                     {
-                        int dataSize = reader.ReadInt32(); 
-                        byte[] encryptedData = reader.ReadBytes(dataSize); 
+                        int dataSize = reader.ReadInt32();
+                        byte[] encryptedData = reader.ReadBytes(dataSize);
+
+                        Debug.Log($"Esperado: {dataSize} bytes, Lido: {encryptedData.Length} bytes");
 
                         if (encryptedData.Length != dataSize)
                         {
@@ -625,9 +635,30 @@ namespace _RD3.SaveSystem
                             return string.Empty;
                         }
 
-                        string decryptedText = EncryptSystem.Instance.DecryptData(encryptedData);
-                        decryptedList.Add(decryptedText);
+                        byte[] decryptedData = EncryptSystem.Instance.DecryptDataToBytes(encryptedData);
+                        Debug.Log($"Descriptografado: {decryptedData.Length} bytes");
+                        decryptedBytes.AddRange(decryptedData);
                     }
+
+                    byte[] finalDecryptedBytes = decryptedBytes.ToArray();
+
+                    if (readBytes)
+                    {
+                        Debug.Log($"Bytes para descompressão: {finalDecryptedBytes.Length}"); // Adicionado log
+                        //tente converter em string antes de descomprimir para depurar.
+                        string debugString = Encoding.UTF8.GetString(finalDecryptedBytes);
+                        Debug.Log("String antes de descomprimir: " + debugString);
+
+                        using MemoryStream ms = new MemoryStream(finalDecryptedBytes);
+                        using GZipStream gzip = new GZipStream(ms, CompressionMode.Decompress);
+                        using StreamReader readerGzip = new StreamReader(gzip, Encoding.UTF8);
+
+                        string json = readerGzip.ReadToEnd();
+                        Debug.Log("JSON Após Descompressão: " + json);
+                        return json;
+                    }
+                    
+                    return Encoding.UTF8.GetString(finalDecryptedBytes);
                 }
             }
             catch (Exception ex)
@@ -635,9 +666,8 @@ namespace _RD3.SaveSystem
                 Debug.LogError("Erro ao ler ou descriptografar o arquivo: " + ex.Message);
                 return string.Empty;
             }
-
-            return string.Join("\n", decryptedList);
         }
+
 
         /// <summary>
         /// Procura um campo específico dentro do texto descriptografado.
@@ -658,6 +688,7 @@ namespace _RD3.SaveSystem
             {
                 if (line.StartsWith($"{fieldName}:"))
                 {
+                    Debug.Log(line.Substring(fieldName.Length + 1).Trim());
                     return line.Substring(fieldName.Length + 1).Trim();
                 }
             }
@@ -681,7 +712,7 @@ namespace _RD3.SaveSystem
                 case CryptSystem.None:
                     using (StreamWriter writer = new StreamWriter(fs))
                     {
-                        writer.WriteLine(lineToAppend); // Agora escreve apenas a nova linha
+                        writer.WriteLine(lineToAppend); 
                     }
                     break;
 
@@ -705,35 +736,112 @@ namespace _RD3.SaveSystem
             {
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             };
-
+          
             string json = JsonConvert.SerializeObject(jsonObjects, Formatting.Indented, settings);
-            File.WriteAllText(path, json);
+            
+            switch (_cryptSystem)
+            {
+                case CryptSystem.None:
+                    File.WriteAllText(path, json);
+                    break;
+
+                case CryptSystem.AES:
+                    FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(json);
+                    using (BinaryWriter writer = new BinaryWriter(fs))
+                    {
+                        writer.Write(encryptedData.Length);
+                        writer.Write(encryptedData);
+                    }
+                    fs.Close();
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         private void WriteOnFileXmlBinary()
         {
-            using FileStream fs = new FileStream(path, FileMode.Create);
-            using StreamWriter writer = new StreamWriter(fs);
+            string xml;
+            
+            using (StringWriter stringWriter = new StringWriter())
+            {
+                XmlSerializer serializer = new XmlSerializer(typeof(List<JsonObject>));
+                serializer.Serialize(stringWriter, jsonObjects);
+                xml = stringWriter.ToString();
+            }
 
-            XmlSerializer serializer = new XmlSerializer(typeof(List<JsonObject>));
-            serializer.Serialize(writer, jsonObjects);
+            switch (_cryptSystem)
+            {
+                case CryptSystem.None:
+                    File.WriteAllText(path, xml);
+                    break;
+
+                case CryptSystem.AES:
+                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(xml);
+                    using (FileStream fs = new FileStream(path, FileMode.Create))
+                    using (BinaryWriter binaryWriter = new BinaryWriter(fs))
+                    {
+                        binaryWriter.Write(encryptedData.Length);
+                        binaryWriter.Write(encryptedData);
+                    }
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         private void WriteOnFileJsonBinary()
         {
-            using FileStream fs = new FileStream(path, FileMode.Create);
-            using GZipStream gzip = new GZipStream(fs, CompressionMode.Compress);
-            using BinaryWriter writer = new BinaryWriter(gzip);
-
             var settings = new JsonSerializerSettings
             {
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             };
-
+            
             string json = JsonConvert.SerializeObject(jsonObjects, Formatting.None, settings);
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
-            writer.Write(jsonBytes);
+
+            switch (_cryptSystem)
+            {
+                case CryptSystem.None:
+                    using (FileStream fs = new FileStream(path, FileMode.Create))
+                    using (GZipStream gzip = new GZipStream(fs, CompressionMode.Compress))
+                    using (BinaryWriter writer = new BinaryWriter(gzip))
+                    {
+                        //writer.Write(jsonBytes.Length); 
+                        writer.Write(jsonBytes); 
+                    }
+                    break;
+
+                case CryptSystem.AES:
+                    byte[] compressedData;
+                    // 🔹 Primeiro compacta os dados
+                    using (MemoryStream ms = new MemoryStream())
+                    using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress))
+                    {
+                        gzip.Write(jsonBytes, 0, jsonBytes.Length);
+                        gzip.Close();
+                        compressedData = ms.ToArray();
+                    }
+
+                    // 🔹 Depois criptografa os dados compactados
+                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(compressedData);
+
+                    using (FileStream fs = new FileStream(path, FileMode.Create))
+                    using (BinaryWriter binaryWriter = new BinaryWriter(fs))
+                    {
+                        binaryWriter.Write(encryptedData.Length);
+                        binaryWriter.Write(encryptedData);
+                        Debug.Log($"Tamanho dos dados gravados: {encryptedData.Length}");
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
+
 
         #endregion
     }
