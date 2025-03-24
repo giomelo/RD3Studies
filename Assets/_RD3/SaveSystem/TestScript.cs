@@ -1,18 +1,13 @@
 using System;
 using System.Collections.Generic;
 using _RD3._Universal._Scripts.Utilities;
+using UnityEditor;
 using UnityEngine;
 
 namespace _RD3.SaveSystem
 {
     [Serializable]
-    public class TestSavableClass : ISavedObject
-    {
-        
-    }
-    
-    [Serializable]
-    public class TestStruct : TestSavableClass
+    public class TestStruct : ISavedObject
     {
         [SaveVariable]
         public float myStructVariable;
@@ -27,7 +22,7 @@ namespace _RD3.SaveSystem
         }
     }
     
-    public class TestScript : AbstractedSavableClass<MonoBehaviour>
+    public class TestScript : AbstractedSavableClass
     {
         [SaveVariable]
         public Vector3 myVector;
@@ -39,4 +34,11 @@ namespace _RD3.SaveSystem
         [SaveVariable]
         public TestStruct myStruct = new TestStruct(4);
     }
+    #if UNITY_EDITOR
+    [CustomEditor(typeof(TestScript))]
+    public class TestScriptEditor : AbstractedSavableClassEditor
+    {
+        
+    }
+#endif
 }

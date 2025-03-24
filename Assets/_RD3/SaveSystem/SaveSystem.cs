@@ -167,8 +167,11 @@ namespace _RD3.SaveSystem
         }
         
 
-        private void SaveObjectState(object obj)
+        public void SaveObjectState(object obj)
         {
+            var currentSaveDirectory = GetSavePath(currentSave);
+            Directory.CreateDirectory(currentSaveDirectory);
+            
             FieldInfo[] fields = obj.GetType().GetFields()
                 .Where(field => field.IsDefined(typeof(SaveVariableAttribute), true)).ToArray();
             //var fields = TypeCache.GetFieldsWithAttribute(typeof(SaveVariableAttribute)).ToArray();
@@ -197,8 +200,14 @@ namespace _RD3.SaveSystem
             }
         }
 
-        private void LoadObjectState(object obj)
+        public void LoadObjectState(object obj)
         {
+            if (!File.Exists(path))
+            {
+                Debug.LogError("Arquivo não encontrado: " + path);
+                return;
+            }
+
             FieldInfo[] fields = obj.GetType().GetFields()
                 .Where(field => field.IsDefined(typeof(SaveVariableAttribute), true)).ToArray();
 
