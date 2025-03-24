@@ -1,13 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 using _RD3._Universal._Scripts.Utilities;
@@ -245,24 +243,41 @@ namespace _RD3.SaveSystem
 
         private void SaveFormatTxt(FieldInfo field, object obj)
         {
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
             object value = field.GetValue(obj);
+            
             if (value is IList list)
             {
                 StringBuilder listValues = new StringBuilder();
                 foreach (var item in list)
                 {
-                    listValues.Append(item).Append(",");
+                    var type = item.GetType();
+                    if ((type.IsClass || type.IsValueType && !type.IsPrimitive))
+                        listValues.Append(JsonConvert.SerializeObject(item,settings)).Append(",");
+                    else
+                        listValues.Append(item).Append(",");
                 }
 
                 if (listValues.Length > 0)
                     listValues.Length--;
                 WriteOnFile($"{field.Name}:[{listValues}];");
             }
+            else if ((field.FieldType.IsClass || field.FieldType.IsValueType && !field.FieldType.IsPrimitive))
+            {
+                string jsonValue = JsonConvert.SerializeObject(value,settings);
+                WriteOnFile($"{field.Name}:{jsonValue};");
+            }
             else
+            {
                 WriteOnFile($"{field.Name}:{value};");
+            }
 
             Debug.Log($"Field {field.Name} has SaveVariableAttribute value: {value}");
         }
+
         private void LoadFormatTxt(FieldInfo field, object obj)
         {
             Debug.Log($"Field {obj} has SaveVariableAttribute value");
@@ -270,12 +285,10 @@ namespace _RD3.SaveSystem
 
             Debug.Log(savedData);
 
-            if (savedData.StartsWith("[") && savedData.EndsWith("]")) 
+            if (savedData.StartsWith("[") && savedData.EndsWith("]"))
             {
                 string listData = savedData.Substring(1, savedData.Length - 2);
-                string[] items = Regex.Matches(listData, @"\((.*?)\)")
-                    .Select(m => m.Groups[1].Value)
-                    .ToArray();
+                string[] items = listData.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
                 IList list = (IList)Activator.CreateInstance(field.FieldType);
                 Type elementType = field.FieldType.GetGenericArguments()[0];
@@ -284,68 +297,32 @@ namespace _RD3.SaveSystem
                 {
                     object convertedItem;
                     Debug.Log(item);
-                    if (elementType == typeof(Vector3)) convertedItem = ParseVector3(item);
-                    else if (elementType == typeof(Vector2)) convertedItem = ParseVector2(item);
-                    else if (elementType == typeof(Vector4)) convertedItem = ParseVector4(item);
-                    else convertedItem = Convert.ChangeType(item, elementType, CultureInfo.InvariantCulture);
+                    if (elementType == typeof(Vector3) || elementType == typeof(Vector2) || elementType == typeof(Vector4))
+                        convertedItem = JsonConvert.DeserializeObject(item, elementType);
+                    else if ((elementType.IsClass || elementType.IsValueType && !elementType.IsPrimitive))
+                        convertedItem = JsonConvert.DeserializeObject(item, elementType);
+                    else
+                        convertedItem = Convert.ChangeType(item, elementType);
 
                     list.Add(convertedItem);
                 }
 
                 field.SetValue(obj, list);
             }
-            else if (field.FieldType == typeof(Vector3)) field.SetValue(obj, ParseVector3(savedData.Trim('(', ')')));
-            else if (field.FieldType == typeof(Vector2)) field.SetValue(obj, ParseVector2(savedData.Trim('(', ')')));
-            else if (field.FieldType == typeof(Vector4)) field.SetValue(obj, ParseVector4(savedData.Trim('(', ')')));
-            
+            else if ((field.FieldType.IsClass || field.FieldType.IsValueType && !field.FieldType.IsPrimitive))
+            {
+                object value = JsonConvert.DeserializeObject(savedData, field.FieldType);
+                field.SetValue(obj, value);
+            }
             else
             {
-                object value = Convert.ChangeType(savedData, field.FieldType, CultureInfo.InvariantCulture);
+                object value = Convert.ChangeType(savedData, field.FieldType);
+                Debug.Log("Converting " + value);
                 field.SetValue(obj, value);
             }
 
             Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
         }
-        
-        private Vector3 ParseVector3(string input)
-        {
-            input = input.Trim('(', ')').Trim();
-
-            string[] components = input.Split(',');
-            if (components.Length != 3)
-                throw new FormatException("Formato inválido para Vector3: " + input);
-
-            float x = float.Parse(components[0], CultureInfo.InvariantCulture);
-            float y = float.Parse(components[1], CultureInfo.InvariantCulture);
-            float z = float.Parse(components[2], CultureInfo.InvariantCulture);
-            return new Vector3(x, y, z);
-        }
-
-
-        private Vector2 ParseVector2(string input)
-        {
-            string[] components = input.Split(',');
-            if (components.Length != 2) throw new FormatException("Formato inválido para Vector2: " + input);
-            
-            float x = float.Parse(components[0], CultureInfo.InvariantCulture);
-            float y = float.Parse(components[1], CultureInfo.InvariantCulture);
-            return new Vector2(x, y);
-
-        }
-
-        private Vector4 ParseVector4(string input)
-        {
-            string[] components = input.Split(',');
-            if (components.Length != 4) throw new FormatException("Formato inválido para Vector4: " + input);
-            
-            float x = float.Parse(components[0], CultureInfo.InvariantCulture);
-            float y = float.Parse(components[1], CultureInfo.InvariantCulture);
-            float z = float.Parse(components[2], CultureInfo.InvariantCulture);
-            float w = float.Parse(components[3], CultureInfo.InvariantCulture);
-            return new Vector4(x, y, z, w);
-
-        }
-        
 
         #endregion
 
@@ -688,8 +665,14 @@ namespace _RD3.SaveSystem
             {
                 if (line.StartsWith($"{fieldName}:"))
                 {
-                    Debug.Log(line.Substring(fieldName.Length + 1).Trim());
-                    return line.Substring(fieldName.Length + 1).Trim();
+                    string fieldValue = line.Substring(fieldName.Length + 1).Trim();
+                    Debug.Log(fieldValue);
+                    if (fieldValue.EndsWith(";"))
+                    {
+                        fieldValue = fieldValue.Substring(0, fieldValue.Length - 1);
+                    }
+                    Debug.Log("field value = " + fieldName + fieldValue);
+                    return fieldValue;
                 }
             }
 

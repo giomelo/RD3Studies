@@ -5,10 +5,11 @@ using UnityEngine;
 
 namespace _RD3.SaveSystem
 {
+    [Serializable]
     public class TestStruct : ISavedObject
     {
         [SaveVariable]
-        public int myStructVariable;
+        public float myStructVariable;
 
         public TestStruct(int myStructVariable)
         {
@@ -25,6 +26,11 @@ namespace _RD3.SaveSystem
         [SaveVariable]
         public Vector3 myVector;
         [SaveVariable]
-        public List<Vector3> myStringList;
+        public List<TestStruct> myStringList = new List<TestStruct>()
+        {
+            new(3), new(4), new(5)
+        };
+        [SaveVariable]
+        public TestStruct myStruct = new TestStruct(4);
     }
 }

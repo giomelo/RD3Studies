@@ -272,8 +272,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   myVector: {x: 2.28, y: 4.21, z: 0}
   myStringList:
-  - {x: 1, y: 6.15, z: 5}
-  - {x: 0, y: 7, z: 4}
+  - myStructVariable: 3
+  - myStructVariable: 1
+  - myStructVariable: 5
+  myStruct:
+    myStructVariable: 4
 --- !u!4 &977321793
 Transform:
   m_ObjectHideFlags: 0
