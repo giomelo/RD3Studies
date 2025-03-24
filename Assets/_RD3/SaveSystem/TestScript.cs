@@ -6,7 +6,13 @@ using UnityEngine;
 namespace _RD3.SaveSystem
 {
     [Serializable]
-    public class TestStruct : ISavedObject
+    public class TestSavableClass : ISavedObject
+    {
+        
+    }
+    
+    [Serializable]
+    public class TestStruct : TestSavableClass
     {
         [SaveVariable]
         public float myStructVariable;
