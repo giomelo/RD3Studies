@@ -1,19 +1,17 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Xml;
 using System.Xml.Serialization;
 using _RD3._Universal._Scripts.Utilities;
+using _RD3.SaveSystem.SaveSystemsTypes;
 using Newtonsoft.Json;
 using Refactor.Data.Variables;
 using UnityEditor;
 using UnityEngine;
-using Formatting = Newtonsoft.Json.Formatting;
 
 namespace _RD3.SaveSystem
 {
@@ -71,20 +69,21 @@ namespace _RD3.SaveSystem
         public string path;
         [SerializeField] private CryptSystem _cryptSystem;
         [SerializeField] private SaveTypes _defaultSaveType = SaveTypes.TXT;
+        
+        public CryptSystem CryptSystem => _cryptSystem;
         public int currentSave;
-
+        private bool _hasDeleted = false;
+        
         #endregion
 
         #region Private Variables
-
-        private StringBuilder _sb = new StringBuilder();
-        private List<JsonObject> _jsonObjects = new List<JsonObject>();
+        
         private List<ISavedObject> _savedObjects = new List<ISavedObject>();
         private readonly JsonSerializerSettings _settings = new JsonSerializerSettings
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };
-        string _decryptedData = string.Empty;
+
 
         #endregion
         
@@ -134,13 +133,11 @@ namespace _RD3.SaveSystem
         }
         public void LoadGame(int slot)
         {
-            if (HasSave(slot))
-                Load();
+            if (HasSave(slot)) Load();
         }
 
         public void AddObjectToList(ISavedObject obj)
         {
-            Debug.Log("Adding object to list " + obj.GetType().Name);
             _savedObjects.Add(obj);
         }
 
@@ -150,7 +147,6 @@ namespace _RD3.SaveSystem
             Directory.CreateDirectory(currentSaveDirectory);
             foreach (var savableObject in _savedObjects)
             {
-                _sb.Clear();
                 SaveObjectState(savableObject);
             }
         }
@@ -166,51 +162,38 @@ namespace _RD3.SaveSystem
 
             foreach (var savableObject in _savedObjects)
             {
-                _sb.Clear();
                 LoadObjectState(savableObject);
             }
         }
-
-        private bool _hasDeleted = false;
+        
 
         private void SaveObjectState(object obj)
         {
-            _jsonObjects.Clear();
-           
             FieldInfo[] fields = obj.GetType().GetFields()
                 .Where(field => field.IsDefined(typeof(SaveVariableAttribute), true)).ToArray();
             //var fields = TypeCache.GetFieldsWithAttribute(typeof(SaveVariableAttribute)).ToArray();
             if (fields.Length == 0) fields = obj.GetType().GetFields();
             _hasDeleted = false;
+            
+            if(fields.Length <= 0) return;
+            
+            SaveSystemType saveSystemType;
+            var saveType = GetSaveType(fields[0]);
+            path = GetPath(GetFileType(saveType), obj);
+            if(!_hasDeleted) DeleteFile(path);
+            _hasDeleted = true;
+            saveSystemType = saveType switch
+            {
+                SaveTypes.Binary => new BinarySystemTypeSave(),
+                SaveTypes.Json => new JsonSystemTypeSave(),
+                SaveTypes.XML => new XmlSystemTypeSave(),
+                SaveTypes.TXT => new TxtSystemTypeSave(),
+                _ => throw new ArgumentOutOfRangeException()
+            };
             foreach (FieldInfo field in fields)
             {
-                var saveType = GetSaveType(field);
-                path = GetPath(GetFileType(saveType), obj);
-                
-                if(!_hasDeleted) DeleteFile(path);
-                _hasDeleted = true;
-                
-                switch (saveType)
-                {
-                    case SaveTypes.Binary:
-                        SaveFormatJson(field, obj);
-                        WriteOnFileJsonBinary();
-                        break;
-                    case SaveTypes.Json:
-                        SaveFormatJson(field, obj);
-                        WriteOnFileJson();
-                        break;
-                    case SaveTypes.XML:
-                        SaveFormatJson(field, obj);
-                        WriteOnFileXml();
-                        break;
-                    case SaveTypes.TXT:
-                        SaveFormatTxt(field, obj);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-
+                saveSystemType.SaveFormat(field, obj);
+                saveSystemType.WriteOnFile();
             }
         }
 
@@ -220,30 +203,25 @@ namespace _RD3.SaveSystem
                 .Where(field => field.IsDefined(typeof(SaveVariableAttribute), true)).ToArray();
 
             //var fields = TypeCache.GetFieldsWithAttribute(typeof(SaveVariableAttribute)).ToArray();
-            _decryptedData = string.Empty;
             if (fields.Length == 0) fields = obj.GetType().GetFields();
+            
+            if(fields.Length <= 0) return;
+            
+            SaveSystemType saveSystemType;
+            var saveType = GetSaveType(fields[0]);
+            path = GetPath(GetFileType(saveType), obj);
 
+            saveSystemType = saveType switch
+            {
+                SaveTypes.Binary => new BinarySystemTypeSave(),
+                SaveTypes.Json => new JsonSystemTypeSave(),
+                SaveTypes.XML => new XmlSystemTypeSave(),
+                SaveTypes.TXT => new TxtSystemTypeSave(),
+                _ => throw new ArgumentOutOfRangeException()
+            };
             foreach (FieldInfo field in fields)
             {
-                var saveType = GetSaveType(field);
-                path = GetPath(GetFileType(saveType), obj);
-                switch (saveType)
-                {
-                    case SaveTypes.Binary:
-                        LoadFormatBinary(field, obj);
-                        break;
-                    case SaveTypes.Json:
-                        LoadFormatJson(field, obj);
-                        break;
-                    case SaveTypes.XML:
-                        LoadFormatXml(field, obj);
-                        break;
-                    case SaveTypes.TXT:
-                        LoadFormatTxt(field, obj);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                saveSystemType.Load(field, obj);
             }
         }
 
@@ -281,226 +259,6 @@ namespace _RD3.SaveSystem
         
         #endregion
 
-        #region TXT
-
-        private void SaveFormatTxt(FieldInfo field, object obj)
-        {
-            object value = field.GetValue(obj);
-            
-            if (value is IList list)
-            {
-                StringBuilder listValues = new StringBuilder();
-                foreach (var item in list)
-                {
-                    var type = item.GetType();
-                    if ((type.IsClass || type.IsValueType && !type.IsPrimitive))
-                        listValues.Append(JsonConvert.SerializeObject(item,_settings)).Append(",");
-                    else
-                        listValues.Append(item).Append(",");
-                }
-
-                if (listValues.Length > 0)
-                    listValues.Length--;
-                WriteOnFile($"{field.Name}:[{listValues}];");
-            }
-            else if ((field.FieldType.IsClass || field.FieldType.IsValueType && !field.FieldType.IsPrimitive))
-            {
-                string jsonValue = JsonConvert.SerializeObject(value,_settings);
-                WriteOnFile($"{field.Name}:{jsonValue};");
-            }
-            else
-            {
-                WriteOnFile($"{field.Name}:{value};");
-            }
-
-            Debug.Log($"Field {field.Name} has SaveVariableAttribute value: {value}");
-        }
-
-        private void LoadFormatTxt(FieldInfo field, object obj)
-        {
-            Debug.Log($"Field {obj} has SaveVariableAttribute value");
-            string savedData = GetFromFile(field.Name);
-
-            Debug.Log(savedData);
-
-            if (savedData.StartsWith("[") && savedData.EndsWith("]"))
-            {
-                string listData = savedData.Substring(1, savedData.Length - 2);
-                string[] items = listData.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-
-                IList list = (IList)Activator.CreateInstance(field.FieldType);
-                Type elementType = field.FieldType.GetGenericArguments()[0];
-
-                foreach (string item in items)
-                {
-                    object convertedItem;
-                    Debug.Log(item);
-                    if (elementType == typeof(Vector3) || elementType == typeof(Vector2) || elementType == typeof(Vector4))
-                        convertedItem = JsonConvert.DeserializeObject(item, elementType);
-                    else if ((elementType.IsClass || elementType.IsValueType && !elementType.IsPrimitive))
-                        convertedItem = JsonConvert.DeserializeObject(item, elementType);
-                    else
-                        convertedItem = Convert.ChangeType(item, elementType);
-
-                    list.Add(convertedItem);
-                }
-
-                field.SetValue(obj, list);
-            }
-            else if ((field.FieldType.IsClass || field.FieldType.IsValueType && !field.FieldType.IsPrimitive))
-            {
-                object value = JsonConvert.DeserializeObject(savedData, field.FieldType);
-                field.SetValue(obj, value);
-            }
-            else
-            {
-                object value = Convert.ChangeType(savedData, field.FieldType);
-                Debug.Log("Converting " + value);
-                field.SetValue(obj, value);
-            }
-
-            Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
-        }
-
-        #endregion
-
-        #region JSON
-
-        private void SaveFormatJson(FieldInfo field, object obj)
-        {
-            object value = field.GetValue(obj);
-            JsonObject wrapper = new JsonObject(field.Name, value);
-            _jsonObjects.Add(wrapper);
-            Debug.Log($"Field {field.Name} has SaveVariableAttribute value: {value}");
-        }
-
-        private void LoadFormatJson(FieldInfo field, object obj)
-        {
-            string json = ReadAndDecryptFile(false);
-            List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json);
-        
-            foreach (var jsonObject in jsonObjects)
-            {
-                if (field.Name != jsonObject.Name) continue;
-
-                object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
-                field.SetValue(obj, convertedValue);
-            }
-
-            Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
-        }
-
-        private object ConvertValue(object value, Type targetType)
-        {
-            if (value == null) return null;
-           
-            if (targetType == typeof(int)) return Convert.ToInt32(value);
-            if (targetType == typeof(float)) return Convert.ToSingle(value);
-            if (targetType == typeof(bool)) return Convert.ToBoolean(value);
-            if (targetType == typeof(string)) return value.ToString();
-
-          
-            if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>))
-                return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value, Formatting.Indented, _settings),
-                    targetType);
-
- 
-            if (targetType == typeof(Vector3))
-            {
-                if (value is XmlNode node)
-                {
-                    float x = float.Parse(node["x"].InnerText);
-                    float y = float.Parse(node["y"].InnerText);
-                    float z = float.Parse(node["z"].InnerText);
-                    return new Vector3(x, y, z);
-                }
-            }
-            
-            if (targetType == typeof(Vector2))
-            {
-                if (value is XmlNode node)
-                {
-                    float x = float.Parse(node["x"].InnerText);
-                    float y = float.Parse(node["y"].InnerText);
-                    return new Vector2(x, y);
-                }
-            }
-            
-            if (targetType == typeof(Vector4))
-            {
-                if (value is XmlNode node)
-                {
-                    float x = float.Parse(node["x"].InnerText);
-                    float y = float.Parse(node["y"].InnerText);
-                    float z = float.Parse(node["z"].InnerText);
-                    float w = float.Parse(node["w"].InnerText);
-                    return new Vector4(x, y, z, w);
-                }
-            }
-            
-            return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value, Formatting.Indented, _settings),
-                targetType);
-        }
-
-
-        #endregion
-
-        #region Binary
-
-        private void LoadFormatBinary(FieldInfo field, object obj)
-        {
-            string json = ReadAndDecryptFile(true);
-            List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json);
-
-            foreach (var jsonObject in jsonObjects)
-            {
-                if (field.Name != jsonObject.Name) continue;
-
-                object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
-                field.SetValue(obj, convertedValue);
-            }
-
-            Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
-
-        }
-
-
-        #endregion
-
-        #region XML
-
-        private void LoadFormatXml(FieldInfo field, object obj)
-        {
-            string xmlContent = ReadAndDecryptFile(false);
-
-            if (string.IsNullOrEmpty(xmlContent))
-            {
-                return;
-            }
-            try
-            {
-                using StringReader stringReader = new StringReader(xmlContent);
-                XmlSerializer serializer = new XmlSerializer(typeof(List<JsonObject>));
-                List<JsonObject> jsonObjects = (List<JsonObject>)serializer.Deserialize(stringReader);
-
-                foreach (var jsonObject in jsonObjects)
-                {
-                    if (field.Name != jsonObject.Name) continue;
-
-                    object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
-                    field.SetValue(obj, convertedValue);
-                }
-
-                Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Erro ao desserializar o XML: {ex.Message}");
-            }
-        }
-
-        #endregion
-
         #region GetMethods
 
         private void GetAllSavedObjects()
@@ -534,23 +292,6 @@ namespace _RD3.SaveSystem
             return currentSaveDirectory;
         }
         
-
-        private string GetFromFile(string fieldName)
-        {
-            if (string.IsNullOrEmpty(_decryptedData))
-            {
-                _decryptedData = ReadAndDecryptFile(false);
-            }
-            Debug.Log(_decryptedData);
-            
-            if(_cryptSystem == CryptSystem.AES)
-            {
-                _decryptedData = _decryptedData.Replace(";","\n");
-            }
-            return ExtractFieldValue(_decryptedData, fieldName);
-        }
-    
-        
         /// <summary>
         /// Read the file and decrypt it if it is encrypted
         /// </summary>
@@ -558,7 +299,7 @@ namespace _RD3.SaveSystem
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
    
-        private string ReadAndDecryptFile(bool readBytes)
+        public string ReadAndDecryptFile(bool readBytes)
         {
             if (!File.Exists(path))
             {
@@ -638,193 +379,7 @@ namespace _RD3.SaveSystem
             }
         }
 
-        /// <summary>
-        /// For txt object extract the field value based on the filed name
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="fieldName"></param>
-        /// <returns></returns>
-        private string ExtractFieldValue(string data, string fieldName)
-        {
-            if (string.IsNullOrEmpty(data))
-            {
-                return null;
-            }
-
-            using StringReader stringReader = new StringReader(data);
-            string line;
-            Debug.Log(data);
-            Debug.Log("field name = " + fieldName);
-
-            while ((line = stringReader.ReadLine()) != null)
-            {
-                if (line.StartsWith($"{fieldName}:"))
-                {
-                    string fieldValue = line.Substring(fieldName.Length + 1).Trim();
-                    Debug.Log(fieldValue);
-                    if (fieldValue.EndsWith(";"))
-                    {
-                        fieldValue = fieldValue.Substring(0, fieldValue.Length - 1);
-                    }
-                    Debug.Log("field value = " + fieldName + fieldValue);
-                    return fieldValue;
-                }
-            }
-
-            return null;
-        }
-
-
-        #endregion
-
-        #region WriteMethods
         
-        /// <summary>
-        /// Write a line into the file for txt objects
-        /// </summary>
-        /// <param name="lineToAppend"></param>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-
-        private void WriteOnFile(string lineToAppend)
-        {
-            _sb.AppendLine(lineToAppend);
-
-            using FileStream fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.None);
-
-            switch (_cryptSystem)
-            {
-                case CryptSystem.None:
-                    using (StreamWriter writer = new StreamWriter(fs))
-                    {
-                        writer.WriteLine(lineToAppend); 
-                    }
-                    break;
-
-                case CryptSystem.AES:
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(lineToAppend);
-                    using (BinaryWriter writer = new BinaryWriter(fs))
-                    {
-                        writer.Write(encryptedData.Length);
-                        writer.Write(encryptedData);
-                    }
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-        /// <summary>
-        /// Write json objects in a json file
-        /// </summary>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-
-        private void WriteOnFileJson()
-        {
-            string json = JsonConvert.SerializeObject(_jsonObjects, Formatting.Indented, _settings);
-            
-            switch (_cryptSystem)
-            {
-                case CryptSystem.None:
-                    File.WriteAllText(path, json);
-                    break;
-
-                case CryptSystem.AES:
-                    FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(json);
-                    using (BinaryWriter writer = new BinaryWriter(fs))
-                    {
-                        writer.Write(encryptedData.Length);
-                        writer.Write(encryptedData);
-                    }
-                    fs.Close();
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-        /// <summary>
-        /// Write the json objects on xml file
-        /// </summary>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        private void WriteOnFileXml()
-        {
-            string xml;
-            
-            using (StringWriter stringWriter = new StringWriter())
-            {
-                XmlSerializer serializer = new XmlSerializer(typeof(List<JsonObject>));
-                serializer.Serialize(stringWriter, _jsonObjects);
-                xml = stringWriter.ToString();
-            }
-
-            switch (_cryptSystem)
-            {
-                case CryptSystem.None:
-                    File.WriteAllText(path, xml);
-                    break;
-
-                case CryptSystem.AES:
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(xml);
-                    using (FileStream fs = new FileStream(path, FileMode.Create))
-                    using (BinaryWriter binaryWriter = new BinaryWriter(fs))
-                    {
-                        binaryWriter.Write(encryptedData.Length);
-                        binaryWriter.Write(encryptedData);
-                    }
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-        /// <summary>
-        /// Write the jsonObjects list to a binary file
-        /// </summary>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-
-        private void WriteOnFileJsonBinary()
-        {
-            string json = JsonConvert.SerializeObject(_jsonObjects, Formatting.None, _settings);
-            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
-
-            switch (_cryptSystem)
-            {
-                case CryptSystem.None:
-                    using (FileStream fs = new FileStream(path, FileMode.Create))
-                    using (GZipStream gzip = new GZipStream(fs, CompressionMode.Compress))
-                    using (BinaryWriter writer = new BinaryWriter(gzip))
-                    {
-                        writer.Write(jsonBytes); 
-                    }
-                    break;
-
-                case CryptSystem.AES:
-                    byte[] compressedData;
-       
-                    using (MemoryStream ms = new MemoryStream())
-                    using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress))
-                    {
-                        gzip.Write(jsonBytes, 0, jsonBytes.Length);
-                        gzip.Close();
-                        compressedData = ms.ToArray();
-                    }
-
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(compressedData);
-
-                    using (FileStream fs = new FileStream(path, FileMode.Create))
-                    using (BinaryWriter binaryWriter = new BinaryWriter(fs))
-                    {
-                        binaryWriter.Write(encryptedData.Length);
-                        binaryWriter.Write(encryptedData);
-                    }
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-
         #endregion
     }
 
