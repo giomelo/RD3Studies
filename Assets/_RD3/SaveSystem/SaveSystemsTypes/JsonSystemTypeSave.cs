@@ -35,17 +35,21 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             }
         }
 
-        public override void Load(FieldInfo field, object obj)
+        public override void Load(FieldInfo field, object obj, string variableName = null)
         {
             string json = SaveSystem.Instance.ReadAndDecryptFile(false);
             List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json,Settings);
-        
+            var stringToCompare = string.IsNullOrEmpty(variableName) ? field.Name : variableName; 
             foreach (var jsonObject in jsonObjects)
             {
-                if (field.Name != jsonObject.Name) continue;
+                if (stringToCompare != jsonObject.Name) continue;
 
                 object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
+                Debug.Log("CONVERTED VALUE "+ convertedValue);
+                Debug.Log(jsonObject.Value);
+                Debug.Log(field.FieldType);
                 field.SetValue(obj, convertedValue);
+             //   SetValue(field, jsonObject.Value, field.FieldType);
             }
 
             Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");

@@ -45,7 +45,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
         }
 
 
-        public override void Load(FieldInfo field, object obj)
+        public override void Load(FieldInfo field, object obj, string variableName = null)
         {
             string xmlContent = SaveSystem.Instance.ReadAndDecryptFile(false);
 
@@ -60,10 +60,11 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                 using StringReader stringReader = new StringReader(xmlContent);
                 XmlSerializer serializer = new XmlSerializer(typeof(List<JsonObject>));
                 List<JsonObject> jsonObjects = (List<JsonObject>)serializer.Deserialize(stringReader);
+                var stringToCompare = string.IsNullOrEmpty(variableName) ? field.Name : variableName; 
 
                 foreach (var jsonObject in jsonObjects)
                 {
-                    if (field.Name != jsonObject.Name) continue;
+                    if (stringToCompare != jsonObject.Name) continue;
 
                     object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
                     field.SetValue(obj, convertedValue);

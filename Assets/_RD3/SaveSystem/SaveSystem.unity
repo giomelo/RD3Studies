@@ -325,8 +325,8 @@ MonoBehaviour:
   variablesToSave:
   - {fileID: 11400000, guid: 2cdb284976a3b684cad00189cdaba7ac, type: 2}
   path: C:/Users/giova/AppData/LocalLow/DefaultCompany/RD3Estudos/save_0
-  _cryptSystem: 1
-  _defaultSaveType: 0
+  _cryptSystem: 0
+  _defaultSaveType: 3
   currentSave: 0
 --- !u!4 &1553226465
 Transform:

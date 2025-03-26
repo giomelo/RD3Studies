@@ -145,6 +145,21 @@ namespace _RD3.SaveSystem
             {
                 SaveObjectState(savableObject);
             }
+            path = GetPath(GetFileType(_defaultSaveType), "Variables");
+            SaveSystemType saveSystemType;
+            saveSystemType = _defaultSaveType switch
+            {
+                SaveTypes.Binary => new BinarySystemTypeSave(),
+                SaveTypes.Json => new JsonSystemTypeSave(),
+                SaveTypes.XML => new XmlSystemTypeSave(),
+                SaveTypes.TXT => new TxtSystemTypeSave(),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            foreach (var variable in variablesToSave)
+                saveSystemType.SaveVariable(variable.name, variable.GetValue());
+            
+            
+            saveSystemType.WriteOnFile();
         }
 
         private void Load()
@@ -159,6 +174,22 @@ namespace _RD3.SaveSystem
             foreach (var savableObject in _savedObjects)
             {
                 LoadObjectState(savableObject);
+            }
+            
+            path = GetPath(GetFileType(_defaultSaveType), "Variables");
+            SaveSystemType saveSystemType;
+            saveSystemType = _defaultSaveType switch
+            {
+                SaveTypes.Binary => new BinarySystemTypeSave(),
+                SaveTypes.Json => new JsonSystemTypeSave(),
+                SaveTypes.XML => new XmlSystemTypeSave(),
+                SaveTypes.TXT => new TxtSystemTypeSave(),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            foreach (var variable in variablesToSave)
+            {
+                FieldInfo value = variable.GetFieldInfo();
+                saveSystemType.Load(value, variable, variable.name);
             }
         }
         
@@ -178,7 +209,7 @@ namespace _RD3.SaveSystem
             
             SaveSystemType saveSystemType;
             var saveType = GetSaveType(fields[0]);
-            path = GetPath(GetFileType(saveType), obj);
+            path = GetPath(GetFileType(saveType), obj.GetType().Name);
             if(!_hasDeleted) DeleteFile(path);
             _hasDeleted = true;
             saveSystemType = saveType switch
@@ -190,16 +221,12 @@ namespace _RD3.SaveSystem
                 _ => throw new ArgumentOutOfRangeException()
             };
             
-            /*foreach (var variable in variablesToSave)
-            {
-                saveSystemType.SaveVariable(variable.name, variable.GetValue());
-            }*/
             foreach (FieldInfo field in fields)
             {
                 saveSystemType.SaveFormat(field, obj);
-                saveSystemType.WriteOnFile();
+                //saveSystemType.WriteOnFile();
             }
-      //      saveSystemType.WriteOnFile();
+            saveSystemType.WriteOnFile();
         }
 
         public void LoadObjectState(object obj)
@@ -215,7 +242,7 @@ namespace _RD3.SaveSystem
             SaveSystemType saveSystemType;
             var saveType = GetSaveType(fields[0]);
             
-            path = GetPath(GetFileType(saveType), obj);
+            path = GetPath(GetFileType(saveType), obj.GetType().Name);
 
             if (!File.Exists(path))
             {
@@ -230,13 +257,7 @@ namespace _RD3.SaveSystem
                 SaveTypes.TXT => new TxtSystemTypeSave(),
                 _ => throw new ArgumentOutOfRangeException()
             };
-            
-            /*foreach (var variable in variablesToSave)
-            {
-                var field = variable.GetType().GetField("Value");
-                saveSystemType.Load(field, variable);
-            }*/
-            
+       
             foreach (FieldInfo field in fields)
             {
                 saveSystemType.Load(field, obj);
@@ -269,12 +290,11 @@ namespace _RD3.SaveSystem
             return fileType;
         }
 
-        private string GetPath(string fileType, object obj)
+        private string GetPath(string fileType, string fileName)
         {
             var currentSaveDirectory = GetSavePath(currentSave);
-            return Path.Combine(currentSaveDirectory, $"{obj.GetType().Name}.{fileType}");
+            return Path.Combine(currentSaveDirectory, $"{fileName}.{fileType}");
         }
-        
         #endregion
 
         #region GetMethods

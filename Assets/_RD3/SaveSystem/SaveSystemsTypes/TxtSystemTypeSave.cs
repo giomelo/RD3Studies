@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -39,11 +40,11 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             }
         }
 
-        public override void Load(FieldInfo field, object obj)
+        public override void Load(FieldInfo field, object obj, string variableName = null)
         {
             Debug.Log($"Field {obj} has SaveVariableAttribute value");
-            string savedData = GetFromFile(field.Name);
-
+            var stringToCompare = string.IsNullOrEmpty(variableName) ? field.Name : variableName; 
+            string savedData = GetFromFile(stringToCompare);
             Debug.Log(savedData);
 
             if (savedData.StartsWith("[") && savedData.EndsWith("]"))
@@ -63,7 +64,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     else if ((elementType.IsClass || elementType.IsValueType && !elementType.IsPrimitive))
                         convertedItem = JsonConvert.DeserializeObject(item, elementType);
                     else
-                        convertedItem = Convert.ChangeType(item, elementType);
+                        convertedItem = Convert.ChangeType(item, elementType, CultureInfo.InvariantCulture);
 
                     list.Add(convertedItem);
                 }
@@ -77,7 +78,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             }
             else
             {
-                object value = Convert.ChangeType(savedData, field.FieldType);
+                object value = Convert.ChangeType(savedData, field.FieldType, CultureInfo.InvariantCulture);
                 Debug.Log("Converting " + value);
                 field.SetValue(obj, value);
             }
@@ -86,7 +87,11 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
         }
         
         #region TXT
-
+        public override void SaveVariable(string variableName, object value)
+        {
+            string jsonValue = JsonConvert.SerializeObject(value,Settings);
+            _sb.AppendLine(($"{variableName}:{jsonValue};"));
+        }
         public override void SaveFormat(FieldInfo field, object obj)
         {
             object value = field.GetValue(obj);

@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Events;
 #if UNITY_EDITOR
@@ -20,6 +21,8 @@ namespace Refactor.Data.Variables
         public virtual void ForceUpdate() => throw new NotImplementedException();
 
         public virtual object GetValue() => throw new NotImplementedException();
+        
+        public virtual FieldInfo GetFieldInfo() => throw new NotImplementedException();
     
     }
 
@@ -125,6 +128,12 @@ namespace Refactor.Data.Variables
         {
             return _value;
         }
+
+        public override FieldInfo GetFieldInfo()
+        {
+            return typeof(Variable<T>).GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
+        }
+        
     }
 
     #if UNITY_EDITOR

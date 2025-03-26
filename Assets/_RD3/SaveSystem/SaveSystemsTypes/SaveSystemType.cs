@@ -22,16 +22,21 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             Debug.Log($"Field {field.Name} has SaveVariableAttribute value: {value}");
         }
 
-        public void SaveVariable(string variableName, object value)
+        public virtual void SaveVariable(string variableName, object value)
         {
             JsonObject wrapper = new JsonObject(variableName, value);
             JsonObjects.Add(wrapper);
         }
 
         public virtual void WriteOnFile(){}
-        public virtual void Load(FieldInfo field, object obj){}
+        public virtual void Load(FieldInfo field, object obj, string variableName = null){}
 
-    
+        public virtual void SetValue(FieldInfo fieldInfo, object value, Type targetType)
+        {
+            object convertedValue = ConvertValue(value, targetType);
+            Debug.Log("CONVERTED VALUE "+ convertedValue);
+            fieldInfo.SetValue(value, convertedValue);
+        }
 
         protected SaveSystemType()
         {
