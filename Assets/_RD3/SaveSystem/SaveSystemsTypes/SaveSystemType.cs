@@ -10,12 +10,9 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
 {
     public class SaveSystemType
     {
-        protected readonly JsonSerializerSettings Settings = new JsonSerializerSettings
-        {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        };
-        protected List<JsonObject> JsonObjects = new List<JsonObject>();
-        protected string DecryptedData = string.Empty;
+        protected readonly JsonSerializerSettings Settings = new() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
+        protected List<JsonObject> JsonObjects = new();
+        protected string DecryptedData;
 
         public virtual void SaveFormat(FieldInfo field, object obj)
         {
@@ -27,8 +24,8 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
 
         public virtual void WriteOnFile(){}
         public virtual void Load(FieldInfo field, object obj){}
-        
-        public SaveSystemType()
+
+        protected SaveSystemType()
         {
             JsonObjects.Clear();
             DecryptedData = string.Empty;
@@ -42,12 +39,6 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             if (targetType == typeof(float)) return Convert.ToSingle(value);
             if (targetType == typeof(bool)) return Convert.ToBoolean(value);
             if (targetType == typeof(string)) return value.ToString();
-
-          
-            /*if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>))
-                return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value, Formatting.Indented, Settings),
-                    targetType);*/
-            
             
             if (targetType == typeof(Vector3))
             {

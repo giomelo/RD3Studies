@@ -29,7 +29,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
                     using (BinaryWriter writer = new BinaryWriter(fs))
                     {
-                        writer.Write(xmlBytes.Length); // Armazena o tamanho do XML
+                        writer.Write(xmlBytes.Length);
                         writer.Write(xmlBytes);
                     }
                     break;
@@ -40,7 +40,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
-                        binaryWriter.Write(encryptedData.Length); // Armazena o tamanho dos dados criptografados
+                        binaryWriter.Write(encryptedData.Length); 
                         binaryWriter.Write(encryptedData);
                     }
                     break;
@@ -52,7 +52,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
 
         public override void Load(FieldInfo field, object obj)
         {
-            string xmlContent = SaveSystem.Instance.ReadAndDecryptFile(true); // Agora sempre lê corretamente os bytes
+            string xmlContent = SaveSystem.Instance.ReadAndDecryptFile(true);
 
             if (string.IsNullOrEmpty(xmlContent))
             {
@@ -78,7 +78,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Erro ao desserializar XML: {ex.Message}");
+                Debug.LogError($"Error: {ex.Message}");
             }
         }
 

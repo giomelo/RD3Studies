@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
@@ -30,12 +29,12 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     break;
 
                 case CryptSystem.AES:
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(jsonBytes); // Criptografar diretamente os bytes do JSON
+                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(jsonBytes);
 
                     using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
-                        binaryWriter.Write(encryptedData.Length); // Escreve o tamanho dos dados antes
+                        binaryWriter.Write(encryptedData.Length); 
                         binaryWriter.Write(encryptedData);
                     }
                     break;

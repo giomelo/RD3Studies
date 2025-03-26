@@ -65,26 +65,21 @@ namespace _RD3.SaveSystem
     {
         #region Serialized Variables
 
-        [SerializeField] private List<Variable> variablesToSave = new List<Variable>();
+        public List<Variable> variablesToSave = new List<Variable>();
         public string path;
         [SerializeField] private CryptSystem _cryptSystem;
         [SerializeField] private SaveTypes _defaultSaveType = SaveTypes.TXT;
         
         public CryptSystem CryptSystem => _cryptSystem;
         public int currentSave;
-        private bool _hasDeleted = false;
         
         #endregion
 
         #region Private Variables
         
         private List<ISavedObject> _savedObjects = new List<ISavedObject>();
-        private readonly JsonSerializerSettings _settings = new JsonSerializerSettings
-        {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        };
-
-
+        private bool _hasDeleted = false;
+        
         #endregion
         
         

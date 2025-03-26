@@ -11,11 +11,6 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
     public class TxtSystemTypeSave : SaveSystemType
     {
         private StringBuilder _sb = new StringBuilder();
-        /// <summary>
-        /// Write a line into the file for txt objects
-        /// </summary>
-        /// <param name="lineToAppend"></param>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
 
         public override void WriteOnFile()
         {
@@ -135,18 +130,12 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             }
             Debug.Log(DecryptedData);
             
-            if(SaveSystem.Instance.CryptSystem == CryptSystem.AES)
-            {
+            if(SaveSystem.Instance.CryptSystem == CryptSystem.AES) 
                 DecryptedData = DecryptedData.Replace(";","\n");
-            }
+            
             return ExtractFieldValue(DecryptedData, fieldName);
         }
-        /// <summary>
-        /// For txt object extract the field value based on the filed name
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="fieldName"></param>
-        /// <returns></returns>
+
         private string ExtractFieldValue(string data, string fieldName)
         {
             if (string.IsNullOrEmpty(data))
@@ -156,20 +145,16 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
 
             using StringReader stringReader = new StringReader(data);
             string line;
-            Debug.Log(data);
-            Debug.Log("field name = " + fieldName);
 
             while ((line = stringReader.ReadLine()) != null)
             {
                 if (line.StartsWith($"{fieldName}:"))
                 {
                     string fieldValue = line.Substring(fieldName.Length + 1).Trim();
-                    Debug.Log(fieldValue);
+                  
                     if (fieldValue.EndsWith(";"))
-                    {
                         fieldValue = fieldValue.Substring(0, fieldValue.Length - 1);
-                    }
-                    Debug.Log("field value = " + fieldName + fieldValue);
+                    
                     return fieldValue;
                 }
             }
