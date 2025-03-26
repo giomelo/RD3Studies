@@ -20,11 +20,12 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             switch (SaveSystem.Instance.CryptSystem)
             {
                 case CryptSystem.None:
-                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Append))
-                    using (GZipStream gzip = new GZipStream(fs, CompressionMode.Compress))
-                    using (BinaryWriter writer = new BinaryWriter(gzip))
+                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create)) 
+                    //using (GZipStream gzip = new GZipStream(fs, CompressionMode.Compress))
+                    using (BinaryWriter writer = new BinaryWriter(fs))
                     {
-                        writer.Write(jsonBytes); 
+                       // writer.Write(jsonBytes.Length);
+                        writer.Write(jsonBytes);
                     }
                     break;
 
@@ -41,7 +42,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
 
                     byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(compressedData);
 
-                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
+                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Append))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
                         binaryWriter.Write(encryptedData.Length);
@@ -56,12 +57,13 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
         public override void Load(FieldInfo field, object obj)
         {
             string json = SaveSystem.Instance.ReadAndDecryptFile(true);
-            List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json);
-
+            Debug.Log(json);
+            List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json, Settings);
             foreach (var jsonObject in jsonObjects)
             {
+                Debug.Log(jsonObject);
                 if (field.Name != jsonObject.Name) continue;
-
+                    
                 object convertedValue = ConvertValue(jsonObject.Value, field.FieldType);
                 field.SetValue(obj, convertedValue);
             }

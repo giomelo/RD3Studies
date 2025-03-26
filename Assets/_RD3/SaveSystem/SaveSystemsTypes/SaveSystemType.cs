@@ -44,11 +44,11 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             if (targetType == typeof(string)) return value.ToString();
 
           
-            if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>))
+            /*if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(List<>))
                 return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value, Formatting.Indented, Settings),
-                    targetType);
-
- 
+                    targetType);*/
+            
+            
             if (targetType == typeof(Vector3))
             {
                 if (value is XmlNode node)
@@ -81,7 +81,6 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     return new Vector4(x, y, z, w);
                 }
             }
-            
             return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value, Formatting.Indented, Settings),
                 targetType);
         }

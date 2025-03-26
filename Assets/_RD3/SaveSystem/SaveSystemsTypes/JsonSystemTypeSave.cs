@@ -38,7 +38,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
         public override void Load(FieldInfo field, object obj)
         {
             string json = SaveSystem.Instance.ReadAndDecryptFile(false);
-            List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json);
+            List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json,Settings);
         
             foreach (var jsonObject in jsonObjects)
             {

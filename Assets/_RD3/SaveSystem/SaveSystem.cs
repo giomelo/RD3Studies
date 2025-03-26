@@ -90,8 +90,9 @@ namespace _RD3.SaveSystem
         
         #region Monobeheviour
 
-        private void Start()
+        protected override void Awake()
         {
+            base.Awake();
             path = $"{Application.persistentDataPath}/save_{0}.save";
             GetAllSavedObjects();
         }
@@ -202,12 +203,6 @@ namespace _RD3.SaveSystem
 
         public void LoadObjectState(object obj)
         {
-            if (!File.Exists(path))
-            {
-                Debug.LogError("Arquivo não encontrado: " + path);
-                return;
-            }
-
             FieldInfo[] fields = obj.GetType().GetFields()
                 .Where(field => field.IsDefined(typeof(SaveVariableAttribute), true)).ToArray();
 
@@ -218,8 +213,14 @@ namespace _RD3.SaveSystem
             
             SaveSystemType saveSystemType;
             var saveType = GetSaveType(fields[0]);
+            
             path = GetPath(GetFileType(saveType), obj);
 
+            if (!File.Exists(path))
+            {
+                Debug.LogError("Arquivo não encontrado: " + path);
+                return;
+            }
             saveSystemType = saveType switch
             {
                 SaveTypes.Binary => new BinarySystemTypeSave(),
@@ -322,8 +323,8 @@ namespace _RD3.SaveSystem
                     if (readBytes)
                     {
                         using FileStream fs = new FileStream(path, FileMode.Open);
-                        using GZipStream gzip = new GZipStream(fs, CompressionMode.Decompress);
-                        using StreamReader reader = new StreamReader(gzip);
+                      //  using GZipStream gzip = new GZipStream(fs, CompressionMode.Decompress);
+                        using StreamReader reader = new StreamReader(fs);
                         return reader.ReadToEnd();
                     }
                     return File.ReadAllText(path);
@@ -371,8 +372,8 @@ namespace _RD3.SaveSystem
                     {
                         string debugString = Encoding.UTF8.GetString(finalDecryptedBytes);
                         using MemoryStream ms = new MemoryStream(finalDecryptedBytes);
-                        using GZipStream gzip = new GZipStream(ms, CompressionMode.Decompress);
-                        using StreamReader readerGzip = new StreamReader(gzip, Encoding.UTF8);
+                     //   using GZipStream gzip = new GZipStream(ms, CompressionMode.Decompress);
+                        using StreamReader readerGzip = new StreamReader(ms, Encoding.UTF8);
 
                         string json = readerGzip.ReadToEnd();
                         return json;
