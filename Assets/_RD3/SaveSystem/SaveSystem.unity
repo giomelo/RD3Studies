@@ -324,8 +324,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   variablesToSave: []
   path: C:/Users/giova/AppData/LocalLow/DefaultCompany/RD3Estudos/save_0
-  _cryptSystem: 0
-  _defaultSaveType: 0
+  _cryptSystem: 1
+  _defaultSaveType: 2
   currentSave: 0
 --- !u!4 &1553226465
 Transform:

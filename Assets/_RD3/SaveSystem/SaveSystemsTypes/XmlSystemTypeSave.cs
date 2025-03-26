@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Xml.Serialization;
 using UnityEngine;
 
@@ -12,7 +13,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
         public override void WriteOnFile()
         {
             string xml;
-            
+    
             using (StringWriter stringWriter = new StringWriter())
             {
                 XmlSerializer serializer = new XmlSerializer(typeof(List<JsonObject>));
@@ -20,18 +21,26 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                 xml = stringWriter.ToString();
             }
 
+            byte[] xmlBytes = Encoding.UTF8.GetBytes(xml);
+
             switch (SaveSystem.Instance.CryptSystem)
             {
                 case CryptSystem.None:
-                    File.WriteAllText(SaveSystem.Instance.path, xml);
+                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
+                    using (BinaryWriter writer = new BinaryWriter(fs))
+                    {
+                        writer.Write(xmlBytes.Length); // Armazena o tamanho do XML
+                        writer.Write(xmlBytes);
+                    }
                     break;
 
                 case CryptSystem.AES:
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(xml);
-                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Append))
+                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(xmlBytes);
+
+                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
-                        binaryWriter.Write(encryptedData.Length);
+                        binaryWriter.Write(encryptedData.Length); // Armazena o tamanho dos dados criptografados
                         binaryWriter.Write(encryptedData);
                     }
                     break;
@@ -43,12 +52,14 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
 
         public override void Load(FieldInfo field, object obj)
         {
-            string xmlContent = SaveSystem.Instance.ReadAndDecryptFile(false);
+            string xmlContent = SaveSystem.Instance.ReadAndDecryptFile(true); // Agora sempre lê corretamente os bytes
 
             if (string.IsNullOrEmpty(xmlContent))
             {
+                Debug.LogError("Arquivo XML está vazio ou corrompido.");
                 return;
             }
+
             try
             {
                 using StringReader stringReader = new StringReader(xmlContent);
@@ -67,8 +78,9 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Erro ao desserializar o XML: {ex.Message}");
+                Debug.LogError($"Erro ao desserializar XML: {ex.Message}");
             }
         }
+
     }
 }

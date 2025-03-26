@@ -30,22 +30,12 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     break;
 
                 case CryptSystem.AES:
-                    byte[] compressedData;
-       
-                    using (MemoryStream ms = new MemoryStream())
-                    using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress))
-                    {
-                        gzip.Write(jsonBytes, 0, jsonBytes.Length);
-                        gzip.Close();
-                        compressedData = ms.ToArray();
-                    }
+                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(jsonBytes); // Criptografar diretamente os bytes do JSON
 
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(compressedData);
-
-                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Append))
+                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
-                        binaryWriter.Write(encryptedData.Length);
+                        binaryWriter.Write(encryptedData.Length); // Escreve o tamanho dos dados antes
                         binaryWriter.Write(encryptedData);
                     }
                     break;
