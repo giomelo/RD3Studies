@@ -21,26 +21,20 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                 xml = stringWriter.ToString();
             }
 
-            byte[] xmlBytes = Encoding.UTF8.GetBytes(xml);
-
             switch (SaveSystem.Instance.CryptSystem)
             {
                 case CryptSystem.None:
-                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
-                    using (BinaryWriter writer = new BinaryWriter(fs))
-                    {
-                        writer.Write(xmlBytes.Length);
-                        writer.Write(xmlBytes);
-                    }
+                    File.WriteAllText(SaveSystem.Instance.path, xml);
                     break;
 
                 case CryptSystem.AES:
+                    byte[] xmlBytes = Encoding.UTF8.GetBytes(xml);
                     byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(xmlBytes);
 
                     using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
-                        binaryWriter.Write(encryptedData.Length); 
+                        binaryWriter.Write(encryptedData.Length);
                         binaryWriter.Write(encryptedData);
                     }
                     break;
@@ -50,9 +44,10 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             }
         }
 
+
         public override void Load(FieldInfo field, object obj)
         {
-            string xmlContent = SaveSystem.Instance.ReadAndDecryptFile(true);
+            string xmlContent = SaveSystem.Instance.ReadAndDecryptFile(false);
 
             if (string.IsNullOrEmpty(xmlContent))
             {
@@ -78,9 +73,10 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Error: {ex.Message}");
+                Debug.LogError($"Erro ao desserializar XML: {ex.Message}");
             }
         }
+
 
     }
 }

@@ -22,8 +22,16 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             Debug.Log($"Field {field.Name} has SaveVariableAttribute value: {value}");
         }
 
+        public void SaveVariable(string variableName, object value)
+        {
+            JsonObject wrapper = new JsonObject(variableName, value);
+            JsonObjects.Add(wrapper);
+        }
+
         public virtual void WriteOnFile(){}
         public virtual void Load(FieldInfo field, object obj){}
+
+    
 
         protected SaveSystemType()
         {
@@ -33,6 +41,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
         
         protected object ConvertValue(object value, Type targetType)
         {
+            Debug.Log(targetType);
             if (value == null) return null;
            
             if (targetType == typeof(int)) return Convert.ToInt32(value);
@@ -72,6 +81,8 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     return new Vector4(x, y, z, w);
                 }
             }
+            
+            Debug.Log(targetType + value.ToString());
             return JsonConvert.DeserializeObject(JsonConvert.SerializeObject(value, Formatting.Indented, Settings),
                 targetType);
         }

@@ -189,11 +189,17 @@ namespace _RD3.SaveSystem
                 SaveTypes.TXT => new TxtSystemTypeSave(),
                 _ => throw new ArgumentOutOfRangeException()
             };
+            
+            /*foreach (var variable in variablesToSave)
+            {
+                saveSystemType.SaveVariable(variable.name, variable.GetValue());
+            }*/
             foreach (FieldInfo field in fields)
             {
                 saveSystemType.SaveFormat(field, obj);
                 saveSystemType.WriteOnFile();
             }
+      //      saveSystemType.WriteOnFile();
         }
 
         public void LoadObjectState(object obj)
@@ -224,6 +230,13 @@ namespace _RD3.SaveSystem
                 SaveTypes.TXT => new TxtSystemTypeSave(),
                 _ => throw new ArgumentOutOfRangeException()
             };
+            
+            /*foreach (var variable in variablesToSave)
+            {
+                var field = variable.GetType().GetField("Value");
+                saveSystemType.Load(field, variable);
+            }*/
+            
             foreach (FieldInfo field in fields)
             {
                 saveSystemType.Load(field, obj);
@@ -317,20 +330,34 @@ namespace _RD3.SaveSystem
                 case CryptSystem.None:
                     if (readBytes)
                     {
-                        using FileStream fs = new FileStream(path, FileMode.Open);
-                      //  using GZipStream gzip = new GZipStream(fs, CompressionMode.Decompress);
-                        using StreamReader reader = new StreamReader(fs);
-                        return reader.ReadToEnd();
-                    }
-                    return File.ReadAllText(path);
+                        using (FileStream fs = new FileStream(path, FileMode.Open))
+                        using (BinaryReader reader = new BinaryReader(fs))
+                        {
+                            int length = reader.ReadInt32();
+                            byte[] xmlBytes = reader.ReadBytes(length);
+                            return Encoding.UTF8.GetString(xmlBytes);
+                        }
 
+                    }
+                   
+                    return File.ReadAllText(path);
+                
                 case CryptSystem.AES:
-                    return DecryptFile(readBytes);
+                    
+                    using (FileStream fs = new FileStream(path, FileMode.Open))
+                    using (BinaryReader reader = new BinaryReader(fs))
+                    {
+                        int length = reader.ReadInt32();
+                        byte[] encryptedData = reader.ReadBytes(length);
+                        byte[] decryptedData = EncryptSystem.Instance.DecryptDataToBytes(encryptedData);
+                        return Encoding.UTF8.GetString(decryptedData);
+                    }
 
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
+
 
         /// <summary>
         /// Read a file and decrypt it if it is encrypted

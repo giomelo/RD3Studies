@@ -20,14 +20,14 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     break;
 
                 case CryptSystem.AES:
-                    FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Append, FileAccess.Write, FileShare.None);
                     byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(json);
-                    using (BinaryWriter writer = new BinaryWriter(fs))
+
+                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
+                    using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
-                        writer.Write(encryptedData.Length);
-                        writer.Write(encryptedData);
+                        binaryWriter.Write(encryptedData.Length); 
+                        binaryWriter.Write(encryptedData);
                     }
-                    fs.Close();
                     break;
 
                 default:
