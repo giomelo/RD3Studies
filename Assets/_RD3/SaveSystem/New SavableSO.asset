@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fea726ac18846268a25a89b92387514, type: 3}
   m_Name: New SavableSO
   m_EditorClassIdentifier: 
-  myInt: 000000000200000006000000
+  myInt: 000000000000000006000000

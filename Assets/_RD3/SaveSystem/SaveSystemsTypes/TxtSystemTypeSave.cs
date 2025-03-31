@@ -27,10 +27,13 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     break;
 
                 case CryptSystem.AES:
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(_sb.ToString());
+                    
+                    var iv = EncryptSystem.Instance.GenerateRandomIV();
+                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(_sb.ToString(),iv);
                     using (BinaryWriter writer = new BinaryWriter(fs))
                     {
-                        writer.Write(encryptedData.Length);
+                        writer.Write(encryptedData.Length); 
+                        writer.Write(iv); 
                         writer.Write(encryptedData);
                     }
                     break;
@@ -111,18 +114,15 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     listValues.Length--;
                 
                 _sb.AppendLine($"{field.Name}:[{listValues}];");
-                //WriteOnFile($"{field.Name}:[{listValues}];");
             }
             else if ((field.FieldType.IsClass || field.FieldType.IsValueType && !field.FieldType.IsPrimitive))
             {
                 string jsonValue = JsonConvert.SerializeObject(value,Settings);
                 _sb.AppendLine(($"{field.Name}:{jsonValue};"));
-             //   WriteOnFile($"{field.Name}:{jsonValue};");
             }
             else
             {
                 _sb.AppendLine(($"{field.Name}:{value};"));
-             //   WriteOnFile($"{field.Name}:{value};");
             }
 
             Debug.Log($"Field {field.Name} has SaveVariableAttribute value: {value}");

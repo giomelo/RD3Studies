@@ -20,12 +20,15 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     break;
 
                 case CryptSystem.AES:
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(json);
 
+                    var iv = EncryptSystem.Instance.GenerateRandomIV();
+                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(json, iv);
+                   
                     using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
                         binaryWriter.Write(encryptedData.Length); 
+                        binaryWriter.Write(iv); 
                         binaryWriter.Write(encryptedData);
                     }
                     break;
@@ -49,7 +52,6 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                 Debug.Log(jsonObject.Value);
                 Debug.Log(field.FieldType);
                 field.SetValue(obj, convertedValue);
-             //   SetValue(field, jsonObject.Value, field.FieldType);
             }
 
             Debug.Log($"Field {field.Name} loaded with value: {field.GetValue(obj)}");

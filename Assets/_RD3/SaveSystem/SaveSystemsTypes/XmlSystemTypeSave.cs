@@ -28,13 +28,15 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     break;
 
                 case CryptSystem.AES:
+                    var iv = EncryptSystem.Instance.GenerateRandomIV();
                     byte[] xmlBytes = Encoding.UTF8.GetBytes(xml);
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(xmlBytes);
+                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(xmlBytes,iv);
 
                     using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
-                        binaryWriter.Write(encryptedData.Length);
+                        binaryWriter.Write(encryptedData.Length); 
+                        binaryWriter.Write(iv); 
                         binaryWriter.Write(encryptedData);
                     }
                     break;

@@ -31,13 +31,6 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
         public virtual void WriteOnFile(){}
         public virtual void Load(FieldInfo field, object obj, string variableName = null){}
 
-        public virtual void SetValue(FieldInfo fieldInfo, object value, Type targetType)
-        {
-            object convertedValue = ConvertValue(value, targetType);
-            Debug.Log("CONVERTED VALUE "+ convertedValue);
-            fieldInfo.SetValue(value, convertedValue);
-        }
-
         protected SaveSystemType()
         {
             JsonObjects.Clear();

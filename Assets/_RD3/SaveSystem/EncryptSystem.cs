@@ -9,27 +9,34 @@ namespace _RD3.SaveSystem
 {
     public class EncryptSystem : Singleton<EncryptSystem>
     {
-        private static string key = "";
-        private static bool hasGeneratedKey;
+        private static string key = "8aKzxN5u9wiyT6F2jPpZu1+3D8MzXoT3gUVcM5hJgFs=";
         private void Start()
         {
             key = !PlayerPrefs.HasKey("Key") ? GenerateRandomKey() : PlayerPrefs.GetString("Key");
             PlayerPrefs.SetString("Key", key);
         }
 
-        public static string GenerateRandomKey()
+        private string GenerateRandomKey()
         {
             using var aes = Aes.Create();
             aes.KeySize = 128;
             aes.GenerateKey();
             return Convert.ToBase64String(aes.Key);
         }
-        public byte[] EncryptDataAes(string plainText)
+
+        public byte[] GenerateRandomIV()
+        {
+            byte[] iv = new byte[16];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(iv);
+            return iv;
+        }
+        public byte[] EncryptDataAes(string plainText, byte[] iv = null)
         {
             using (Aes aesAlg = Aes.Create())
             {
-                aesAlg.Key = Encoding.UTF8.GetBytes(key);
-                aesAlg.IV = new byte[16]; // You should use a different IV each time for security
+                aesAlg.Key = Convert.FromBase64String(key);
+                aesAlg.IV = iv; 
 
                 ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
 
@@ -46,13 +53,13 @@ namespace _RD3.SaveSystem
                 }
             }
         }
-        
-        public byte[] EncryptDataAes(byte[] plainBytes)
+      
+        public byte[] EncryptDataAes(byte[] plainBytes, byte[] iv = null)
         {
             using (Aes aesAlg = Aes.Create())
             {
-                aesAlg.Key = Encoding.UTF8.GetBytes(key);
-                aesAlg.IV = new byte[16]; // IV fixo, mas idealmente deve ser aleatório
+                aesAlg.Key = Convert.FromBase64String(key);
+                aesAlg.IV = iv;
 
                 ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
 
@@ -66,12 +73,12 @@ namespace _RD3.SaveSystem
             }
         }
         
-        public byte[] DecryptDataToBytes(byte[] cipherText)
+        public byte[] DecryptDataToBytes(byte[] cipherText, byte[] iv = null)
         {
             using (Aes aesAlg = Aes.Create())
             {
-                aesAlg.Key = Encoding.UTF8.GetBytes(key);
-                aesAlg.IV = new byte[16]; // Deve ser o mesmo IV usado na criptografia
+                aesAlg.Key = Convert.FromBase64String(key);
+                aesAlg.IV = iv; 
 
                 ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 
@@ -81,27 +88,6 @@ namespace _RD3.SaveSystem
                 {
                     csDecrypt.CopyTo(output);
                     return output.ToArray();
-                }
-            }
-        }
-        public string DecryptData(byte[] encryptedData)
-        {
-            using (Aes aesAlg = Aes.Create())
-            {
-                aesAlg.Key = Encoding.UTF8.GetBytes(key);
-                aesAlg.IV = new byte[16]; // You should use a different IV each time for security
-
-                ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-
-                using (MemoryStream msDecrypt = new MemoryStream(encryptedData))
-                {
-                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-                    {
-                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
-                        {
-                            return srDecrypt.ReadToEnd();
-                        }
-                    }
                 }
             }
         }

@@ -259,9 +259,8 @@ namespace _RD3.SaveSystem
             };
        
             foreach (FieldInfo field in fields)
-            {
                 saveSystemType.Load(field, obj);
-            }
+            
         }
 
         private SaveTypes GetSaveType(FieldInfo field)
@@ -301,12 +300,14 @@ namespace _RD3.SaveSystem
 
         private void GetAllSavedObjects()
         {
-            foreach (Type type in Assembly.GetExecutingAssembly().GetTypes())
+            var types = TypeCache.GetTypesDerivedFrom(typeof(ISavedObject)).ToArray();
+            foreach (Type type in types)
             {
                 if (typeof(ISavedObject).IsAssignableFrom(type) && !typeof(ScriptableObject).IsAssignableFrom(type) &&
                     !typeof(MonoBehaviour).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract)
                 {
                     ISavedObject instance = (ISavedObject)Activator.CreateInstance(type);
+                    Debug.Log(type);
                     AddObjectToList(instance);
                 }
             }
@@ -316,10 +317,8 @@ namespace _RD3.SaveSystem
             foreach (ScriptableObject obj in allObjects)
             {
                 if (obj is ISavedObject savedObject)
-                {
-                    Debug.Log(obj.name);
                     AddObjectToList(savedObject);
-                }
+                
             }
         }
 
@@ -368,66 +367,14 @@ namespace _RD3.SaveSystem
                     using (BinaryReader reader = new BinaryReader(fs))
                     {
                         int length = reader.ReadInt32();
+                        byte[] iv = reader.ReadBytes(16);
                         byte[] encryptedData = reader.ReadBytes(length);
-                        byte[] decryptedData = EncryptSystem.Instance.DecryptDataToBytes(encryptedData);
+                        byte[] decryptedData = EncryptSystem.Instance.DecryptDataToBytes(encryptedData, iv);
                         return Encoding.UTF8.GetString(decryptedData);
                     }
 
                 default:
                     throw new ArgumentOutOfRangeException();
-            }
-        }
-
-
-        /// <summary>
-        /// Read a file and decrypt it if it is encrypted
-        /// </summary>
-        /// <param name="readBytes"></param>
-        /// <returns></returns>
-        private string DecryptFile(bool readBytes)
-        {
-            try
-            {
-                using (FileStream fss = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
-                using (BinaryReader reader = new BinaryReader(fss))
-                {
-                    List<byte> decryptedBytes = new List<byte>();
-
-                    while (reader.BaseStream.Position < reader.BaseStream.Length)
-                    {
-                        int dataSize = reader.ReadInt32();
-                        byte[] encryptedData = reader.ReadBytes(dataSize);
-
-                        if (encryptedData.Length != dataSize)
-                        {
-                            Debug.LogError("Erro ao ler o arquivo: dados incompletos.");
-                            return string.Empty;
-                        }
-
-                        byte[] decryptedData = EncryptSystem.Instance.DecryptDataToBytes(encryptedData);
-                        decryptedBytes.AddRange(decryptedData);
-                    }
-
-                    byte[] finalDecryptedBytes = decryptedBytes.ToArray();
-
-                    if (readBytes)
-                    {
-                        string debugString = Encoding.UTF8.GetString(finalDecryptedBytes);
-                        using MemoryStream ms = new MemoryStream(finalDecryptedBytes);
-                     //   using GZipStream gzip = new GZipStream(ms, CompressionMode.Decompress);
-                        using StreamReader readerGzip = new StreamReader(ms, Encoding.UTF8);
-
-                        string json = readerGzip.ReadToEnd();
-                        return json;
-                    }
-                    
-                    return Encoding.UTF8.GetString(finalDecryptedBytes);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError(ex.Message);
-                return string.Empty;
             }
         }
 

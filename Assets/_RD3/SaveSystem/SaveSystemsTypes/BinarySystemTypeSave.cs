@@ -20,21 +20,22 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             {
                 case CryptSystem.None:
                     using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create)) 
-                    //using (GZipStream gzip = new GZipStream(fs, CompressionMode.Compress))
                     using (BinaryWriter writer = new BinaryWriter(fs))
                     {
-                       // writer.Write(jsonBytes.Length);
+                        writer.Write(jsonBytes.Length);
                         writer.Write(jsonBytes);
                     }
                     break;
 
                 case CryptSystem.AES:
-                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(jsonBytes);
+                    var iv = EncryptSystem.Instance.GenerateRandomIV();
+                    byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(jsonBytes,iv);
 
                     using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
                         binaryWriter.Write(encryptedData.Length); 
+                        binaryWriter.Write(iv); 
                         binaryWriter.Write(encryptedData);
                     }
                     break;
