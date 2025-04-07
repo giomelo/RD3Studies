@@ -292,6 +292,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1143919002
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1143919004}
+  - component: {fileID: 1143919003}
+  m_Layer: 0
+  m_Name: TestScript (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1143919003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1143919002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c049c1e36b7f442693b31ba10e24ac22, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  myVector: {x: 55, y: 22, z: 0}
+  myStringList:
+  - myStructVariable: 1
+  - myStructVariable: 4
+  - myStructVariable: 5
+  myStruct:
+    myStructVariable: 4
+--- !u!4 &1143919004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1143919002}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1553226463
 GameObject:
   m_ObjectHideFlags: 0
@@ -325,8 +376,8 @@ MonoBehaviour:
   variablesToSave:
   - {fileID: 11400000, guid: 2cdb284976a3b684cad00189cdaba7ac, type: 2}
   path: C:/Users/giova/AppData/LocalLow/DefaultCompany/RD3Estudos/save_0
-  _cryptSystem: 1
-  _defaultSaveType: 0
+  _cryptSystem: 0
+  _defaultSaveType: 1
   currentSave: 0
 --- !u!4 &1553226465
 Transform:
@@ -500,3 +551,4 @@ SceneRoots:
   - {fileID: 693875036}
   - {fileID: 1553226465}
   - {fileID: 977321793}
+  - {fileID: 1143919004}

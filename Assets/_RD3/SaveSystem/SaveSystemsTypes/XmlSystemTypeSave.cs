@@ -21,10 +21,10 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                 xml = stringWriter.ToString();
             }
 
-            switch (SaveSystem.Instance.CryptSystem)
+            switch (SaveSystemManager.Instance.CryptSystem)
             {
                 case CryptSystem.None:
-                    File.WriteAllText(SaveSystem.Instance.path, xml);
+                    File.WriteAllText(SaveSystemManager.Instance.path, xml);
                     break;
 
                 case CryptSystem.AES:
@@ -32,7 +32,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     byte[] xmlBytes = Encoding.UTF8.GetBytes(xml);
                     byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(xmlBytes,iv);
 
-                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
+                    using (FileStream fs = new FileStream(SaveSystemManager.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
                         binaryWriter.Write(encryptedData.Length); 
@@ -49,11 +49,11 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
 
         public override void Load(FieldInfo field, object obj, string variableName = null)
         {
-            string xmlContent = SaveSystem.Instance.ReadAndDecryptFile(false);
+            string xmlContent = SaveSystemManager.Instance.ReadAndDecryptFile(false);
 
             if (string.IsNullOrEmpty(xmlContent))
             {
-                Debug.LogError("Arquivo XML está vazio ou corrompido.");
+                Debug.LogError("File is null.");
                 return;
             }
 
@@ -76,7 +76,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Erro ao desserializar XML: {ex.Message}");
+                Debug.LogError($"Error: {ex.Message}");
             }
         }
 

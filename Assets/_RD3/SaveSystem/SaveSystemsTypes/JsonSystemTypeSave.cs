@@ -13,10 +13,10 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
         {
             string json = JsonConvert.SerializeObject(JsonObjects, Formatting.Indented, Settings);
             
-            switch (SaveSystem.Instance.CryptSystem)
+            switch (SaveSystemManager.Instance.CryptSystem)
             {
                 case CryptSystem.None:
-                    File.WriteAllText(SaveSystem.Instance.path, json);
+                    File.WriteAllText(SaveSystemManager.Instance.path, json);
                     break;
 
                 case CryptSystem.AES:
@@ -24,7 +24,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     var iv = EncryptSystem.Instance.GenerateRandomIV();
                     byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(json, iv);
                    
-                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
+                    using (FileStream fs = new FileStream(SaveSystemManager.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
                         binaryWriter.Write(encryptedData.Length); 
@@ -40,7 +40,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
 
         public override void Load(FieldInfo field, object obj, string variableName = null)
         {
-            string json = SaveSystem.Instance.ReadAndDecryptFile(false);
+            string json = SaveSystemManager.Instance.ReadAndDecryptFile(false);
             List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json,Settings);
             var stringToCompare = string.IsNullOrEmpty(variableName) ? field.Name : variableName; 
             foreach (var jsonObject in jsonObjects)

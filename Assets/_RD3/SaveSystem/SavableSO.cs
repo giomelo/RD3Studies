@@ -3,17 +3,19 @@ using UnityEngine;
 
 namespace _RD3.SaveSystem
 {
-    public abstract class SavableSo : ScriptableObject, ISavedObject
+    public abstract class SavableSo : ScriptableObject, ISavableObject
     {
         public void SaveObject()
         {
-            SaveSystem.Instance.SaveObjectState(this);
+            SaveSystemManager.Instance.SaveObjectState(this, name);
         }
         
         public void LoadObject()
         {
-            SaveSystem.Instance.LoadObjectState(this);
+            SaveSystemManager.Instance.LoadObjectState(this,name);
         }
+
+        public string Name { get => name; set {} }
     }
 
 

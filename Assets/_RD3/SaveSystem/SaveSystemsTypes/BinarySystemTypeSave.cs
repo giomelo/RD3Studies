@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
@@ -16,14 +17,17 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             string json = JsonConvert.SerializeObject(JsonObjects, Formatting.None, Settings);
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
 
-            switch (SaveSystem.Instance.CryptSystem)
+            switch (SaveSystemManager.Instance.CryptSystem)
             {
                 case CryptSystem.None:
-                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create)) 
-                    using (BinaryWriter writer = new BinaryWriter(fs))
+                    using (FileStream fs = new FileStream(SaveSystemManager.Instance.path, FileMode.Create)) 
+                    using (var gzip = new GZipStream(fs, CompressionMode.Compress))
                     {
-                        writer.Write(jsonBytes.Length);
-                        writer.Write(jsonBytes);
+                        using (BinaryWriter writer = new BinaryWriter(gzip))
+                        {
+                            writer.Write(jsonBytes.Length);
+                            writer.Write(jsonBytes);
+                        }   
                     }
                     break;
 
@@ -31,7 +35,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     var iv = EncryptSystem.Instance.GenerateRandomIV();
                     byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(jsonBytes,iv);
 
-                    using (FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Create))
+                    using (FileStream fs = new FileStream(SaveSystemManager.Instance.path, FileMode.Create))
                     using (BinaryWriter binaryWriter = new BinaryWriter(fs))
                     {
                         binaryWriter.Write(encryptedData.Length); 
@@ -46,7 +50,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
 
         public override void Load(FieldInfo field, object obj, string variableName = null)
         {
-            string json = SaveSystem.Instance.ReadAndDecryptFile(true);
+            string json = SaveSystemManager.Instance.ReadAndDecryptFile(true);
             Debug.Log(json);
             List<JsonObject> jsonObjects = JsonConvert.DeserializeObject<List<JsonObject>>(json, Settings);
             var stringToCompare = string.IsNullOrEmpty(variableName) ? field.Name : variableName; 

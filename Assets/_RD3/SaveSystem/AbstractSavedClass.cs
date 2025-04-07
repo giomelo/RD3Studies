@@ -1,26 +1,26 @@
-using System;
-using _RD3._Universal._Scripts.Utilities;
 using UnityEditor;
 using UnityEngine;
 
 namespace _RD3.SaveSystem
 {
-    public abstract class AbstractedSavableClass : MonoBehaviour, ISavedObject
+    public abstract class AbstractedSavableClass : MonoBehaviour, ISavableObject
     {
         private void Awake()
         {
-            SaveSystem.Instance.AddObjectToList(this);
+            SaveSystemManager.Instance.AddObjectToList(this);
         }
 
         public void SaveObject()
         {
-            SaveSystem.Instance.SaveObjectState(this);
+            SaveSystemManager.Instance.SaveObjectState(this, Name);
         }
         
         public void LoadObject()
         {
-            SaveSystem.Instance.LoadObjectState(this);
+            SaveSystemManager.Instance.LoadObjectState(this, Name);
         }
+
+        public string Name { get => gameObject.name; set{} }
     }
     
         

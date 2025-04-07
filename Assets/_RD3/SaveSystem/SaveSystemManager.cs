@@ -5,10 +5,11 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Xml;
+using System.Xml.Schema;
 using System.Xml.Serialization;
 using _RD3._Universal._Scripts.Utilities;
 using _RD3.SaveSystem.SaveSystemsTypes;
-using Newtonsoft.Json;
 using Refactor.Data.Variables;
 using UnityEditor;
 using UnityEngine;
@@ -28,21 +29,53 @@ namespace _RD3.SaveSystem
     [XmlInclude(typeof(List<Vector4>))]
     [XmlInclude(typeof(TestStruct))]
     [XmlInclude(typeof(List<TestStruct>))]
+    [XmlInclude(typeof(TestStruct[]))]
     [Serializable]
-    public class JsonObject
+    public class JsonObject : IXmlSerializable
     {
         public string Name { get; set; }
         public object Value { get; set; }
+        
 
         public JsonObject(string name, object value)
         {
             Name = name;
-            // Value = JsonConvert.SerializeObject(value);
             Value = value;
         }
 
         public JsonObject()
         {
+        }
+        
+        public XmlSchema GetSchema() => null;
+        public void ReadXml(XmlReader reader)
+        {
+            reader.MoveToContent();
+            Name = reader.GetAttribute("Name");
+            var type = Type.GetType(reader.GetAttribute("Type"));
+            reader.ReadStartElement();
+            var serializer = new XmlSerializer(type);
+            Value = serializer.Deserialize(reader);
+            reader.ReadEndElement();
+        
+        }
+
+        void IXmlSerializable.WriteXml(XmlWriter writer)
+        {
+            WriteXml(writer);
+        }
+        
+        public void WriteXml(XmlWriter writer)
+        {
+            writer.WriteAttributeString("Name", Name);
+            writer.WriteAttributeString("Type", Value.GetType().AssemblyQualifiedName);
+            var serializer = new XmlSerializer(Value.GetType());
+            serializer.Serialize(writer, Value);
+        }
+
+        XmlSchema IXmlSerializable.GetSchema()
+        {
+            return GetSchema();
         }
     }
     [Serializable]
@@ -61,7 +94,7 @@ namespace _RD3.SaveSystem
         AES,
     }
 
-    public class SaveSystem : Singleton<SaveSystem>
+    public class SaveSystemManager : Singleton<SaveSystemManager>
     {
         #region Serialized Variables
 
@@ -77,7 +110,7 @@ namespace _RD3.SaveSystem
 
         #region Private Variables
         
-        private List<ISavedObject> _savedObjects = new List<ISavedObject>();
+        private List<ISavableObject> _savedObjects = new List<ISavableObject>();
         private bool _hasDeleted = false;
         
         #endregion
@@ -105,16 +138,10 @@ namespace _RD3.SaveSystem
             Debug.Log(hasSave ? "Save exists" : "Save does not exist");
             return hasSave;
         }
-
-        public void SaveGame()
-        {
-            Save();
-        }
-
+        
         public void DeleteSave(int slot)
         {
-            if (HasSave(slot))
-                DeleteSave(GetSavePath(slot));
+            if (HasSave(slot)) DeleteSave(GetSavePath(slot));
         }
 
         private void DeleteSave(string path)
@@ -132,19 +159,28 @@ namespace _RD3.SaveSystem
             if (HasSave(slot)) Load();
         }
 
-        public void AddObjectToList(ISavedObject obj)
+        /// <summary>
+        /// add objects do save save list
+        /// </summary>
+        /// <param name="obj"></param>
+        public void AddObjectToList(ISavableObject obj)
         {
             _savedObjects.Add(obj);
         }
+        
+        /// <summary>
+        /// loop trough all objects and save them
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
 
-        private void Save()
+        public void Save()
         {
             var currentSaveDirectory = GetSavePath(currentSave);
             Directory.CreateDirectory(currentSaveDirectory);
             foreach (var savableObject in _savedObjects)
-            {
-                SaveObjectState(savableObject);
-            }
+                SaveObjectState(savableObject, savableObject.Name);
+            
+            // save variables
             path = GetPath(GetFileType(_defaultSaveType), "Variables");
             SaveSystemType saveSystemType;
             saveSystemType = _defaultSaveType switch
@@ -173,7 +209,7 @@ namespace _RD3.SaveSystem
 
             foreach (var savableObject in _savedObjects)
             {
-                LoadObjectState(savableObject);
+                LoadObjectState(savableObject, savableObject.Name);
             }
             
             path = GetPath(GetFileType(_defaultSaveType), "Variables");
@@ -194,14 +230,14 @@ namespace _RD3.SaveSystem
         }
         
 
-        public void SaveObjectState(object obj)
+        public void SaveObjectState(object obj, string fileName)
         {
             var currentSaveDirectory = GetSavePath(currentSave);
             Directory.CreateDirectory(currentSaveDirectory);
             
             FieldInfo[] fields = obj.GetType().GetFields()
                 .Where(field => field.IsDefined(typeof(SaveVariableAttribute), true)).ToArray();
-            //var fields = TypeCache.GetFieldsWithAttribute(typeof(SaveVariableAttribute)).ToArray();
+ 
             if (fields.Length == 0) fields = obj.GetType().GetFields();
             _hasDeleted = false;
             
@@ -209,9 +245,11 @@ namespace _RD3.SaveSystem
             
             SaveSystemType saveSystemType;
             var saveType = GetSaveType(fields[0]);
-            path = GetPath(GetFileType(saveType), obj.GetType().Name);
+            path = GetPath(GetFileType(saveType), fileName);
+            
             if(!_hasDeleted) DeleteFile(path);
             _hasDeleted = true;
+            
             saveSystemType = saveType switch
             {
                 SaveTypes.Binary => new BinarySystemTypeSave(),
@@ -224,17 +262,15 @@ namespace _RD3.SaveSystem
             foreach (FieldInfo field in fields)
             {
                 saveSystemType.SaveFormat(field, obj);
-                //saveSystemType.WriteOnFile();
             }
             saveSystemType.WriteOnFile();
         }
 
-        public void LoadObjectState(object obj)
+        public void LoadObjectState(object obj, string fileName)
         {
             FieldInfo[] fields = obj.GetType().GetFields()
                 .Where(field => field.IsDefined(typeof(SaveVariableAttribute), true)).ToArray();
-
-            //var fields = TypeCache.GetFieldsWithAttribute(typeof(SaveVariableAttribute)).ToArray();
+            
             if (fields.Length == 0) fields = obj.GetType().GetFields();
             
             if(fields.Length <= 0) return;
@@ -242,11 +278,11 @@ namespace _RD3.SaveSystem
             SaveSystemType saveSystemType;
             var saveType = GetSaveType(fields[0]);
             
-            path = GetPath(GetFileType(saveType), obj.GetType().Name);
+            path = GetPath(GetFileType(saveType), fileName);
 
             if (!File.Exists(path))
             {
-                Debug.LogError("Arquivo não encontrado: " + path);
+                Debug.LogError("File not found: " + path);
                 return;
             }
             saveSystemType = saveType switch
@@ -298,29 +334,42 @@ namespace _RD3.SaveSystem
 
         #region GetMethods
 
-        private void GetAllSavedObjects()
-        {
-            var types = TypeCache.GetTypesDerivedFrom(typeof(ISavedObject)).ToArray();
-            foreach (Type type in types)
-            {
-                if (typeof(ISavedObject).IsAssignableFrom(type) && !typeof(ScriptableObject).IsAssignableFrom(type) &&
-                    !typeof(MonoBehaviour).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract)
-                {
-                    ISavedObject instance = (ISavedObject)Activator.CreateInstance(type);
-                    Debug.Log(type);
-                    AddObjectToList(instance);
-                }
-            }
-
-            ScriptableObject[] allObjects = Resources.FindObjectsOfTypeAll<ScriptableObject>();
-
-            foreach (ScriptableObject obj in allObjects)
-            {
-                if (obj is ISavedObject savedObject)
-                    AddObjectToList(savedObject);
-                
-            }
-        }
+       private void GetAllSavedObjects()
+       {
+           /*
+           var types = AppDomain.CurrentDomain.GetAssemblies()
+               .SelectMany(assembly => assembly.GetTypes())
+               .Where(type =>
+                   typeof(ISavableObject).IsAssignableFrom(type) &&
+                   !typeof(ScriptableObject).IsAssignableFrom(type) &&
+                   !typeof(MonoBehaviour).IsAssignableFrom(type) &&
+                   !type.IsInterface &&
+                   !type.IsAbstract)
+               .ToArray();
+       
+           foreach (Type type in types)
+           {
+               try
+               {
+                   ISavableObject instance = (ISavableObject)Activator.CreateInstance(type);
+                   AddObjectToList(instance);
+               }
+               catch (Exception e)
+               {
+                   Debug.LogError($"Error {type}: {e}");
+               }
+           }
+           */
+   
+           ScriptableObject[] allObjects = Resources.FindObjectsOfTypeAll<ScriptableObject>();
+       
+           foreach (ScriptableObject obj in allObjects)
+           {
+               Debug.Log("Found object: " + obj.name);
+               if (obj is ISavableObject savedObject)
+                   AddObjectToList(savedObject);
+           }
+       }
 
         private string GetSavePath(int slot)
         {
@@ -340,7 +389,7 @@ namespace _RD3.SaveSystem
         {
             if (!File.Exists(path))
             {
-                Debug.LogError("Arquivo não encontrado: " + path);
+                Debug.LogError("File not found: " + path);
                 return string.Empty;
             }
 
@@ -350,13 +399,15 @@ namespace _RD3.SaveSystem
                     if (readBytes)
                     {
                         using (FileStream fs = new FileStream(path, FileMode.Open))
-                        using (BinaryReader reader = new BinaryReader(fs))
+                        using (var gzip = new GZipStream(fs, CompressionMode.Decompress))
                         {
-                            int length = reader.ReadInt32();
-                            byte[] xmlBytes = reader.ReadBytes(length);
-                            return Encoding.UTF8.GetString(xmlBytes);
+                            using (BinaryReader reader = new BinaryReader(gzip))
+                            {
+                                int length = reader.ReadInt32();
+                                byte[] xmlBytes = reader.ReadBytes(length);
+                                return Encoding.UTF8.GetString(xmlBytes);
+                            }
                         }
-
                     }
                    
                     return File.ReadAllText(path);
@@ -384,14 +435,14 @@ namespace _RD3.SaveSystem
 
 #if UNITY_EDITOR
 
-    [CustomEditor(typeof(SaveSystem)), CanEditMultipleObjects]
+    [CustomEditor(typeof(SaveSystemManager)), CanEditMultipleObjects]
     public class SceneLoaderControllerEditor : Editor
     {
-        private SaveSystem _data;
+        private SaveSystemManager _data;
 
         private void OnEnable()
         {
-            _data = (SaveSystem)target;
+            _data = (SaveSystemManager)target;
         }
 
         public override void OnInspectorGUI()
@@ -400,7 +451,7 @@ namespace _RD3.SaveSystem
             _data.path = $"{Application.persistentDataPath}/save_{_data.currentSave}";
             if (GUILayout.Button("Save"))
             {
-                _data.SaveGame();
+                _data.Save();
             }
 
             if (GUILayout.Button("Load"))

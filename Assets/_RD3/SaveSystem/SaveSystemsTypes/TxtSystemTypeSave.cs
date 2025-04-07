@@ -15,9 +15,9 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
 
         public override void WriteOnFile()
         {
-            using FileStream fs = new FileStream(SaveSystem.Instance.path, FileMode.Append, FileAccess.Write, FileShare.None);
+            using FileStream fs = new FileStream(SaveSystemManager.Instance.path, FileMode.Append, FileAccess.Write, FileShare.None);
         
-            switch (SaveSystem.Instance.CryptSystem)
+            switch (SaveSystemManager.Instance.CryptSystem)
             {
                 case CryptSystem.None:
                     using (StreamWriter writer = new StreamWriter(fs))
@@ -55,24 +55,36 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                 string listData = savedData.Substring(1, savedData.Length - 2);
                 string[] items = listData.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
-                IList list = (IList)Activator.CreateInstance(field.FieldType);
-                Type elementType = field.FieldType.GetGenericArguments()[0];
+                Type fieldType = field.FieldType;
+                Type elementType = fieldType.IsArray ? fieldType.GetElementType() : fieldType.GetGenericArguments()[0];
 
-                foreach (string item in items)
+                IList list;
+    
+                if (fieldType.IsArray)
+                    list = Array.CreateInstance(elementType, items.Length);
+                else
+                    list = (IList)Activator.CreateInstance(fieldType);
+                
+
+                for (int i = 0; i < items.Length; i++)
                 {
                     object convertedItem;
+                    string item = items[i].Trim();
                     Debug.Log(item);
-                    if (elementType == typeof(Vector3) || elementType == typeof(Vector2) || elementType == typeof(Vector4))
-                        convertedItem = JsonConvert.DeserializeObject(item, elementType);
-                    else if ((elementType.IsClass || elementType.IsValueType && !elementType.IsPrimitive))
+
+                    if (elementType == typeof(Vector3) || elementType == typeof(Vector2) || elementType == typeof(Vector4) || elementType.IsClass || (elementType.IsValueType && !elementType.IsPrimitive))
                         convertedItem = JsonConvert.DeserializeObject(item, elementType);
                     else
                         convertedItem = Convert.ChangeType(item, elementType, CultureInfo.InvariantCulture);
 
-                    list.Add(convertedItem);
+                    if (fieldType.IsArray)
+                        ((Array)list).SetValue(convertedItem, i);
+                    else
+                        list.Add(convertedItem);
+                    
                 }
-
-                field.SetValue(obj, list);
+                
+                field.SetValue(obj, fieldType.IsArray ? list as Array : list);
             }
             else if ((field.FieldType.IsClass || field.FieldType.IsValueType && !field.FieldType.IsPrimitive))
             {
@@ -82,7 +94,6 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             else
             {
                 object value = Convert.ChangeType(savedData, field.FieldType, CultureInfo.InvariantCulture);
-                Debug.Log("Converting " + value);
                 field.SetValue(obj, value);
             }
 
@@ -131,11 +142,11 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
         {
             if (string.IsNullOrEmpty(DecryptedData))
             {
-                DecryptedData = SaveSystem.Instance.ReadAndDecryptFile(false);
+                DecryptedData = SaveSystemManager.Instance.ReadAndDecryptFile(false);
             }
             Debug.Log(DecryptedData);
             
-            if(SaveSystem.Instance.CryptSystem == CryptSystem.AES) 
+            if(SaveSystemManager.Instance.CryptSystem == CryptSystem.AES) 
                 DecryptedData = DecryptedData.Replace(";","\n");
             
             return ExtractFieldValue(DecryptedData, fieldName);
