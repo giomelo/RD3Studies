@@ -1,5 +1,5 @@
 
-namespace _RD3.SaveSystem
+namespace _RD3.SaveSystem.Scripts
 {
     public interface ISavableObject
     {

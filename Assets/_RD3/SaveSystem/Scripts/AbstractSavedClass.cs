@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace _RD3.SaveSystem
+namespace _RD3.SaveSystem.Scripts
 {
     public abstract class AbstractedSavableClass : MonoBehaviour, ISavableObject
     {

@@ -1,11 +1,9 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
-using System.Text;
-using _RD3._Universal._Scripts.Utilities;
 using UnityEngine;
 
-namespace _RD3.SaveSystem
+namespace _RD3.SaveSystem.Scripts
 {
     public class EncryptSystem : Singleton<EncryptSystem>
     {

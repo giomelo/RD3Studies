@@ -6,9 +6,9 @@ using Newtonsoft.Json;
 using UnityEngine;
 using Formatting = Newtonsoft.Json.Formatting;
 
-namespace _RD3.SaveSystem.SaveSystemsTypes
+namespace _RD3.SaveSystem.Scripts.SaveSystemsTypes
 {
-    public class SaveSystemType
+    public class SavableSystemType
     {
         protected readonly JsonSerializerSettings Settings = new() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
         protected List<JsonObject> JsonObjects = new();
@@ -31,7 +31,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
         public virtual void WriteOnFile(){}
         public virtual void Load(FieldInfo field, object obj, string variableName = null){}
 
-        protected SaveSystemType()
+        protected SavableSystemType()
         {
             JsonObjects.Clear();
             DecryptedData = string.Empty;

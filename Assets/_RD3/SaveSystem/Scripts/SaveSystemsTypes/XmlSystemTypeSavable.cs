@@ -6,9 +6,9 @@ using System.Text;
 using System.Xml.Serialization;
 using UnityEngine;
 
-namespace _RD3.SaveSystem.SaveSystemsTypes
+namespace _RD3.SaveSystem.Scripts.SaveSystemsTypes
 {
-    public class XmlSystemTypeSave : SaveSystemType
+    public class XmlSystemTypeSavable : SavableSystemType
     {
         public override void WriteOnFile()
         {
@@ -27,7 +27,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     File.WriteAllText(SaveSystemManager.Instance.path, xml);
                     break;
 
-                case CryptSystem.AES:
+                case CryptSystem.Aes:
                     var iv = EncryptSystem.Instance.GenerateRandomIV();
                     byte[] xmlBytes = Encoding.UTF8.GetBytes(xml);
                     byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(xmlBytes,iv);

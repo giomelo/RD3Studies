@@ -7,9 +7,9 @@ using System.Text;
 using Newtonsoft.Json;
 using UnityEngine;
 
-namespace _RD3.SaveSystem.SaveSystemsTypes
+namespace _RD3.SaveSystem.Scripts.SaveSystemsTypes
 {
-    public class TxtSystemTypeSave : SaveSystemType
+    public class TxtSystemTypeSavable : SavableSystemType
     {
         private StringBuilder _sb = new StringBuilder();
 
@@ -26,7 +26,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     }
                     break;
 
-                case CryptSystem.AES:
+                case CryptSystem.Aes:
                     
                     var iv = EncryptSystem.Instance.GenerateRandomIV();
                     byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(_sb.ToString(),iv);
@@ -146,7 +146,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
             }
             Debug.Log(DecryptedData);
             
-            if(SaveSystemManager.Instance.CryptSystem == CryptSystem.AES) 
+            if(SaveSystemManager.Instance.CryptSystem == CryptSystem.Aes) 
                 DecryptedData = DecryptedData.Replace(";","\n");
             
             return ExtractFieldValue(DecryptedData, fieldName);

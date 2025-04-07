@@ -8,13 +8,12 @@ using System.Text;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
-using _RD3._Universal._Scripts.Utilities;
-using _RD3.SaveSystem.SaveSystemsTypes;
+using _RD3.SaveSystem.Scripts.SaveSystemsTypes;
 using Refactor.Data.Variables;
 using UnityEditor;
 using UnityEngine;
 
-namespace _RD3.SaveSystem
+namespace _RD3.SaveSystem.Scripts
 {
     [XmlInclude(typeof(Vector3))]
     [XmlInclude(typeof(Vector2))]
@@ -52,10 +51,14 @@ namespace _RD3.SaveSystem
         {
             reader.MoveToContent();
             Name = reader.GetAttribute("Name");
-            var type = Type.GetType(reader.GetAttribute("Type"));
+            var type = Type.GetType(reader.GetAttribute("Type") ?? string.Empty);
             reader.ReadStartElement();
-            var serializer = new XmlSerializer(type);
-            Value = serializer.Deserialize(reader);
+            if (type != null)
+            {
+                var serializer = new XmlSerializer(type);
+                Value = serializer.Deserialize(reader);
+            }
+
             reader.ReadEndElement();
         
         }
@@ -68,7 +71,8 @@ namespace _RD3.SaveSystem
         public void WriteXml(XmlWriter writer)
         {
             writer.WriteAttributeString("Name", Name);
-            writer.WriteAttributeString("Type", Value.GetType().AssemblyQualifiedName);
+            var assemblyQualifiedName = Value.GetType().AssemblyQualifiedName;
+            if (assemblyQualifiedName != null) writer.WriteAttributeString("Type", assemblyQualifiedName);
             var serializer = new XmlSerializer(Value.GetType());
             serializer.Serialize(writer, Value);
         }
@@ -84,24 +88,24 @@ namespace _RD3.SaveSystem
         Binary,
         Json,
         XML,
-        TXT
+        Txt
     }
 
     [Serializable]
     public enum CryptSystem
     {
         None,
-        AES,
+        Aes,
     }
 
     public class SaveSystemManager : Singleton<SaveSystemManager>
     {
         #region Serialized Variables
-
+        
         public List<Variable> variablesToSave = new List<Variable>();
         public string path;
         [SerializeField] private CryptSystem _cryptSystem;
-        [SerializeField] private SaveTypes _defaultSaveType = SaveTypes.TXT;
+        [SerializeField] private SaveTypes _defaultSaveType = SaveTypes.Txt;
         
         public CryptSystem CryptSystem => _cryptSystem;
         public int currentSave;
@@ -182,13 +186,13 @@ namespace _RD3.SaveSystem
             
             // save variables
             path = GetPath(GetFileType(_defaultSaveType), "Variables");
-            SaveSystemType saveSystemType;
+            SavableSystemType saveSystemType;
             saveSystemType = _defaultSaveType switch
             {
-                SaveTypes.Binary => new BinarySystemTypeSave(),
-                SaveTypes.Json => new JsonSystemTypeSave(),
-                SaveTypes.XML => new XmlSystemTypeSave(),
-                SaveTypes.TXT => new TxtSystemTypeSave(),
+                SaveTypes.Binary => new BinarySystemTypeSavable(),
+                SaveTypes.Json => new JsonSystemTypeSavable(),
+                SaveTypes.XML => new XmlSystemTypeSavable(),
+                SaveTypes.Txt => new TxtSystemTypeSavable(),
                 _ => throw new ArgumentOutOfRangeException()
             };
             foreach (var variable in variablesToSave)
@@ -200,26 +204,23 @@ namespace _RD3.SaveSystem
 
         private void Load()
         {
-            var currentSaveDirectory = GetSavePath(currentSave);
-            if (!Directory.Exists(currentSaveDirectory))
+            if (!HasSave(currentSave))
             {
-                Debug.LogError("No save found at " + currentSaveDirectory);
+                Debug.LogError("No save found");
                 return;
             }
 
             foreach (var savableObject in _savedObjects)
-            {
                 LoadObjectState(savableObject, savableObject.Name);
-            }
             
             path = GetPath(GetFileType(_defaultSaveType), "Variables");
-            SaveSystemType saveSystemType;
+            SavableSystemType saveSystemType;
             saveSystemType = _defaultSaveType switch
             {
-                SaveTypes.Binary => new BinarySystemTypeSave(),
-                SaveTypes.Json => new JsonSystemTypeSave(),
-                SaveTypes.XML => new XmlSystemTypeSave(),
-                SaveTypes.TXT => new TxtSystemTypeSave(),
+                SaveTypes.Binary => new BinarySystemTypeSavable(),
+                SaveTypes.Json => new JsonSystemTypeSavable(),
+                SaveTypes.XML => new XmlSystemTypeSavable(),
+                SaveTypes.Txt => new TxtSystemTypeSavable(),
                 _ => throw new ArgumentOutOfRangeException()
             };
             foreach (var variable in variablesToSave)
@@ -243,27 +244,26 @@ namespace _RD3.SaveSystem
             
             if(fields.Length <= 0) return;
             
-            SaveSystemType saveSystemType;
+            SavableSystemType savableSystemType;
             var saveType = GetSaveType(fields[0]);
             path = GetPath(GetFileType(saveType), fileName);
             
             if(!_hasDeleted) DeleteFile(path);
             _hasDeleted = true;
             
-            saveSystemType = saveType switch
+            savableSystemType = saveType switch
             {
-                SaveTypes.Binary => new BinarySystemTypeSave(),
-                SaveTypes.Json => new JsonSystemTypeSave(),
-                SaveTypes.XML => new XmlSystemTypeSave(),
-                SaveTypes.TXT => new TxtSystemTypeSave(),
+                SaveTypes.Binary => new BinarySystemTypeSavable(),
+                SaveTypes.Json => new JsonSystemTypeSavable(),
+                SaveTypes.XML => new XmlSystemTypeSavable(),
+                SaveTypes.Txt => new TxtSystemTypeSavable(),
                 _ => throw new ArgumentOutOfRangeException()
             };
             
             foreach (FieldInfo field in fields)
-            {
-                saveSystemType.SaveFormat(field, obj);
-            }
-            saveSystemType.WriteOnFile();
+                savableSystemType.SaveFormat(field, obj);
+            
+            savableSystemType.WriteOnFile();
         }
 
         public void LoadObjectState(object obj, string fileName)
@@ -275,7 +275,7 @@ namespace _RD3.SaveSystem
             
             if(fields.Length <= 0) return;
             
-            SaveSystemType saveSystemType;
+            SavableSystemType savableSystemType;
             var saveType = GetSaveType(fields[0]);
             
             path = GetPath(GetFileType(saveType), fileName);
@@ -285,17 +285,17 @@ namespace _RD3.SaveSystem
                 Debug.LogError("File not found: " + path);
                 return;
             }
-            saveSystemType = saveType switch
+            savableSystemType = saveType switch
             {
-                SaveTypes.Binary => new BinarySystemTypeSave(),
-                SaveTypes.Json => new JsonSystemTypeSave(),
-                SaveTypes.XML => new XmlSystemTypeSave(),
-                SaveTypes.TXT => new TxtSystemTypeSave(),
+                SaveTypes.Binary => new BinarySystemTypeSavable(),
+                SaveTypes.Json => new JsonSystemTypeSavable(),
+                SaveTypes.XML => new XmlSystemTypeSavable(),
+                SaveTypes.Txt => new TxtSystemTypeSavable(),
                 _ => throw new ArgumentOutOfRangeException()
             };
        
             foreach (FieldInfo field in fields)
-                saveSystemType.Load(field, obj);
+                savableSystemType.Load(field, obj);
             
         }
 
@@ -317,11 +317,11 @@ namespace _RD3.SaveSystem
                 SaveTypes.Binary => "bin",
                 SaveTypes.Json => "json",
                 SaveTypes.XML => "xml",
-                SaveTypes.TXT => "txt",
+                SaveTypes.Txt => "txt",
                 _ => throw new ArgumentOutOfRangeException()
             };
 
-            if (_cryptSystem == CryptSystem.AES) fileType = "aes";
+            if (_cryptSystem == CryptSystem.Aes) fileType = "aes";
             return fileType;
         }
 
@@ -336,31 +336,6 @@ namespace _RD3.SaveSystem
 
        private void GetAllSavedObjects()
        {
-           /*
-           var types = AppDomain.CurrentDomain.GetAssemblies()
-               .SelectMany(assembly => assembly.GetTypes())
-               .Where(type =>
-                   typeof(ISavableObject).IsAssignableFrom(type) &&
-                   !typeof(ScriptableObject).IsAssignableFrom(type) &&
-                   !typeof(MonoBehaviour).IsAssignableFrom(type) &&
-                   !type.IsInterface &&
-                   !type.IsAbstract)
-               .ToArray();
-       
-           foreach (Type type in types)
-           {
-               try
-               {
-                   ISavableObject instance = (ISavableObject)Activator.CreateInstance(type);
-                   AddObjectToList(instance);
-               }
-               catch (Exception e)
-               {
-                   Debug.LogError($"Error {type}: {e}");
-               }
-           }
-           */
-   
            ScriptableObject[] allObjects = Resources.FindObjectsOfTypeAll<ScriptableObject>();
        
            foreach (ScriptableObject obj in allObjects)
@@ -412,7 +387,7 @@ namespace _RD3.SaveSystem
                    
                     return File.ReadAllText(path);
                 
-                case CryptSystem.AES:
+                case CryptSystem.Aes:
                     
                     using (FileStream fs = new FileStream(path, FileMode.Open))
                     using (BinaryReader reader = new BinaryReader(fs))
@@ -456,13 +431,13 @@ namespace _RD3.SaveSystem
 
             if (GUILayout.Button("Load"))
             {
-                _data.LoadGame(0);
+                _data.LoadGame(_data.currentSave);
             }
 
             if (GUILayout.Button("Delete Save"))
             {
                 _data.path = $"{Application.persistentDataPath}/save_{_data.currentSave}";
-                _data.DeleteSave(0);
+                _data.DeleteSave(_data.currentSave);
             }
 
         }

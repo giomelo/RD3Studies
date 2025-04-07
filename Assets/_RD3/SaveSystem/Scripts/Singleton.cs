@@ -1,7 +1,6 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace _RD3._Universal._Scripts.Utilities
+namespace _RD3.SaveSystem.Scripts
 {
     public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {
@@ -35,7 +34,7 @@ namespace _RD3._Universal._Scripts.Utilities
             {
                 Debug.LogWarning("[Singleton] Another instance of " + typeof(T) + " already exists. Destroying this one.");
                 _instance = this as T;
-              //  Destroy(gameObject);userd
+              //  Destroy(gameObject);
             }
         }
 

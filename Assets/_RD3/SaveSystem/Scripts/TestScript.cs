@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace _RD3.SaveSystem
+namespace _RD3.SaveSystem.Scripts
 {
     [Serializable]
     public class TestStruct : ISavableObject
@@ -31,12 +30,12 @@ namespace _RD3.SaveSystem
         public TestStruct[] myStringList = {
             new(3), new(4), new(5)
         };
-        [SaveVariable]
+    
         public TestStruct myStruct = new TestStruct(4);
 
         private void Start()
         {
-            var test = new TestClassNonMonobehaviour(2, 5, "test");
+            var test = new TestClassNonMonoBehaviour(2, 5, "test");
             SaveSystemManager.Instance.SaveObjectState(test, test.Name);
             test.myFloat = 10;
             Debug.Log(test.myFloat);
@@ -51,5 +50,5 @@ namespace _RD3.SaveSystem
     {
         
     }
-#endif
+    #endif
 }

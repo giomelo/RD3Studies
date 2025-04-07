@@ -7,9 +7,9 @@ using System.Text;
 using Newtonsoft.Json;
 using UnityEngine;
 
-namespace _RD3.SaveSystem.SaveSystemsTypes
+namespace _RD3.SaveSystem.Scripts.SaveSystemsTypes
 {
-    public class BinarySystemTypeSave : SaveSystemType
+    public class BinarySystemTypeSavable : SavableSystemType
     {
         
         public override void WriteOnFile()
@@ -31,7 +31,7 @@ namespace _RD3.SaveSystem.SaveSystemsTypes
                     }
                     break;
 
-                case CryptSystem.AES:
+                case CryptSystem.Aes:
                     var iv = EncryptSystem.Instance.GenerateRandomIV();
                     byte[] encryptedData = EncryptSystem.Instance.EncryptDataAes(jsonBytes,iv);
 

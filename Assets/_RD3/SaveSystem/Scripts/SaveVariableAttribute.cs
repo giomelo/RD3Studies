@@ -1,6 +1,6 @@
 using System;
 
-namespace _RD3.SaveSystem
+namespace _RD3.SaveSystem.Scripts
 {
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     public class SaveVariableAttribute : Attribute
