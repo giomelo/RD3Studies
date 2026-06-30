@@ -48,7 +48,7 @@ namespace _RD3.CachedEditor
                 CreateCachedEditor(settings, null, ref editor);
                 editor.OnInspectorGUI();
             }
-          
+         
         }
 
     }

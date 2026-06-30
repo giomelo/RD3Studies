@@ -86,10 +86,10 @@ namespace Google.Play.Instant.Editor.Internal
                 new PlayInstantSettingPolicy(
                     "Split Application Binary should be disabled",
                     "Instant apps don't support APK Expansion (OBB) Files.",
-                    () => !PlayerSettings.Android.useAPKExpansionFiles,
+                    () => !PlayerSettings.Android.splitApplicationBinary,
                     () =>
                     {
-                        PlayerSettings.Android.useAPKExpansionFiles = false;
+                        PlayerSettings.Android.splitApplicationBinary = false;
                         return true;
                     })
             };
