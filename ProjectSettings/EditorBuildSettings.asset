@@ -7,7 +7,7 @@ EditorBuildSettings:
   m_Scenes:
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
+    guid: 9fc0d4010bbf28b4594072e72b8655ab
   - enabled: 0
     path: Assets/_RD3/ArFoundation/AR.unity
     guid: 8cd026f7bea2f4e44aec490cdd899e25
@@ -17,9 +17,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/_RD3/CustomPath/ExampleScene.unity
     guid: 0e1bfeffe352b5b46b16b2c997345495
-  - enabled: 1
+  - enabled: 0
     path: Assets/_RD3/Addressables/AdressablesTest.unity
     guid: f3f1c809cb24bbb4bb9586b3f142e287
+  - enabled: 1
+    path: Assets/ProfilingScene.unity
+    guid: b6c37aae1ebd8452ea1922d564a7098e
   m_configObjects:
     EasyAR.Settings: {fileID: 11400000, guid: 6273b1fa9b1e6554b8f51433a92ca757, type: 2}
     com.unity.addressableassets: {fileID: 11400000, guid: e0b75eb4bdd622d409de7ce99c294a1a,
@@ -28,3 +31,4 @@ EditorBuildSettings:
       type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: a0741052823aee34daa59c1faf2429ea,
       type: 2}
+  m_UseUCBPForAssetBundles: 0

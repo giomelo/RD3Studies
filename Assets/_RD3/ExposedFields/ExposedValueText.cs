@@ -18,7 +18,8 @@ namespace _RD3.ExposedFileds
             Obj = obj;
         }
     }
-
+    
+    #if UNITY_EDITOR
     [RequireComponent(typeof(TextMeshProUGUI))]
     public class ExposedValueText : MonoBehaviour
     {
@@ -88,4 +89,6 @@ namespace _RD3.ExposedFileds
             }
         }
     }
+    
+    #endif
 }
