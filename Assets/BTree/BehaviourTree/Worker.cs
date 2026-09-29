@@ -1,82 +1,85 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
-namespace BTree.BehaviourTree
-{
-    public class Worker : BTAgent
-    {
-        [SerializeField]private Transform office;
-        
-        public override void Start()
-        {
-            base.Start();
+public class Worker : BTAgent {
 
-            Leaf goToPatron = new Leaf("Go To Patron", GoToPatron);
-            Leaf goToOffice = new Leaf("Go To Office", GoToOffice);
-            
-            
-            Leaf allocatePatron = new Leaf("Allocate Patron", AllocatePatron);
-            Leaf patronWaiting = new Leaf("Patron waiting", PatronWaiting);
-            
-            Sequence sequence = new Sequence("Allocate Patron");
-            sequence.AddChild(allocatePatron);
-            
-            
-            BehaviourTree waiting = new BehaviourTree();
-            waiting.AddChild(patronWaiting);
-            DepSequence moveToPatron = new DepSequence("Move to Patron", waiting, agent);
-            moveToPatron.AddChild(goToPatron);
-            
-            
-            Selector work = new Selector("Work");
-            work.AddChild(sequence);  
-            work.AddChild(goToOffice);
-            
-            tree.AddChild(work);
-            
-        }
 
-        public Node.Status PatronWaiting()
-        {
-            if (patron == null) return Node.Status.FAILURE;
+    GameObject patron;
+    public GameObject office;
 
-            if (patron.isWaitingForTicket)
-            {
-                return Node.Status.SUCCESS;
-            }
-            
+    public override void Start() {
+
+        base.Start();
+
+        Leaf patronStillWaiting = new Leaf("Is Patron Waiting?", PatronIsWaiting);
+        Leaf allocatePatron = new Leaf("Allocate Patron", AllocatePatron);
+
+        Leaf goToPatron = new Leaf("Go to Patron", GoToPatron);
+        Leaf goToOffice = new Leaf("Go to Office", GoToOffice);
+
+        Sequence getPatron = new Sequence("Find a Patron");
+        getPatron.AddChild(allocatePatron);
+
+        BehaviourTree waiting = new BehaviourTree();
+        waiting.AddChild(patronStillWaiting);
+
+        DepSequence moveToPatron = new DepSequence("Moving to Patron", waiting, agent);
+        moveToPatron.AddChild(goToPatron);
+
+        getPatron.AddChild(moveToPatron);
+
+        Selector beWorker = new Selector("Be a worker");
+        beWorker.AddChild(getPatron);
+        beWorker.AddChild(goToOffice);
+
+        tree.AddChild(beWorker);
+    }
+
+    public Node.Status PatronIsWaiting() {
+
+        if (patron == null) return Node.Status.FAILURE;
+        if (patron.GetComponent<PatronBehaviour>().isWaiting) return Node.Status.SUCCESS;
+
+        return Node.Status.FAILURE;
+    }
+
+    public Node.Status AllocatePatron() {
+
+        if (Blackboard.Instance.patrons.Count == 0) {
+
             return Node.Status.FAILURE;
         }
-        
-        private PatronBehaviour patron;
 
-        public Node.Status AllocatePatron()
-        {
-            if (BlackBoard.Instance.patrons.Count == 0) return Node.Status.FAILURE;
-            
-            patron = BlackBoard.Instance.patrons.Pop();
-            if (patron == null) return Node.Status.FAILURE;
+        patron = Blackboard.Instance.patrons.Pop();
 
-            return Node.Status.SUCCESS;
-        }
-        public Node.Status GoToPatron()
-        {
-            if (patron == null) return Node.Status.FAILURE;
-            var s = GoToLocation(patron.transform.position);
-            if(s == Node.Status.SUCCESS)
-            {
-                patron.hasTicked = true;
-                patron = null;
-            }
+        if (patron == null) {
 
-            return s;
-
+            return Node.Status.FAILURE;
         }
 
-        public Node.Status GoToOffice()
-        {
+        return Node.Status.SUCCESS;
+    }
+
+    public Node.Status GoToPatron() {
+
+        if (patron == null) return Node.Status.FAILURE;
+
+        Node.Status s = GoToLocation(patron.transform.position);
+
+        if (s == Node.Status.SUCCESS) {
+
+            patron.GetComponent<PatronBehaviour>().ticket = true;
             patron = null;
-            return GoToLocation(office.position);
-            
         }
+
+        return s;
+    }
+
+    public Node.Status GoToOffice() {
+
+        Node.Status s = GoToLocation(office.transform.position);
+        patron = null;
+        return s;
     }
 }

@@ -1,140 +1,141 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
-namespace BTree.BehaviourTree
-{
-    public class PatronBehaviour : global::BTree.BehaviourTree.BTAgent
-    {
-        [SerializeField]private GameObject[] art;
-        [SerializeField]private GameObject frontDoor;
-        [SerializeField]private GameObject home;
-        
-        [Range(0,1000)]
-        [SerializeField]private int boredomLevel = 0;
+public class PatronBehaviour : BTAgent {
 
-        public bool hasTicked = false;
-        public bool isWaitingForTicket = false;
-        
-        public override void Start()
-        {
-            base.Start();
-            // Initialize the behavior tree here
-            
-            RSelector selectobj = new RSelector("Select art to view");
+    public GameObject[] art;
+    public GameObject frontdoor;
+    public GameObject homeBase;
 
-            for (int i = 0; i < art.Length; i++)
-            {
-                Leaf gta = new Leaf("Go to " + art[i].name, i, GoToArt, () =>
-                {
-                    boredomLevel = Mathf.Clamp(boredomLevel - 150, 0, 1000);
-                });
-                selectobj.AddChild(gta);
-            }
+    [Range(0, 1000)]
+    public int boredom = 0;
 
-            Leaf goToFrontDoor = new Leaf("Go to frontDoor", GoToFrontDoor);
-            Leaf goToHome = new Leaf("Go to home", GoToHome, () =>
-            {
-                
-            });
-            Leaf isBorded = new Leaf("Is bored?", IsBored);
-            Leaf isOpen = new Leaf("Is open?", IsOpen);
-            
-            
-            Sequence viewArt = new Sequence("Vier art");
-            viewArt.AddChild(isOpen);
-            viewArt.AddChild(isBorded);
-            viewArt.AddChild(goToFrontDoor);
-            
-            Leaf noTicket = new Leaf("Waiting for ticket", NoTicke);
-            Leaf isWaiting = new Leaf("Is waiting", IsWaiting);
+    public bool ticket = false;
+    public bool isWaiting = false;
 
-            BehaviourTree waitForTicket = new BehaviourTree();
-            waitForTicket.AddChild(noTicket);
-            
-            Loop getTicket = new Loop("Get ticket", waitForTicket);
-            getTicket.AddChild(isWaiting);
-            
-            viewArt.AddChild(getTicket);
-            
-            BehaviourTree whileBored = new BehaviourTree();
-            whileBored.AddChild(isBorded);
-            
-            Loop lookAtPaintings = new Loop("Look at paitings", whileBored);
-            lookAtPaintings.AddChild(selectobj);
-            
-            viewArt.AddChild(lookAtPaintings);
-            viewArt.AddChild(goToHome);
+    public override void Start() {
 
-            BehaviourTree galleryOpenCondition = new BehaviourTree();
-            galleryOpenCondition.AddChild(isOpen);
-            
-            DepSequence bePatron = new DepSequence("Be a patron", galleryOpenCondition, agent);
-            bePatron.AddChild(viewArt);
-           
-            Selector viewArtWithFallback = new Selector("View art with fallback");
-            viewArtWithFallback.AddChild(bePatron);
-            viewArtWithFallback.AddChild(goToHome);
-            
-            tree.AddChild(viewArtWithFallback);
-            
-            StartCoroutine(IncreaseBoredom());
-        }
-        IEnumerator IncreaseBoredom()
-        {
-            while (true)
-            {
-                boredomLevel = Mathf.Clamp(boredomLevel + 30, 0, 1000);
-                yield return new WaitForSeconds(Random.Range(1,5));
-            }
-        }
-        
-        public Node.Status GoToFrontDoor()
-        {
-            Node.Status s = GoToDoor(frontDoor);
-            return s;
-        }
-        public Node.Status GoToArt(int i)
-        {
-            if(!art[i].activeInHierarchy)
-            {
-                return Node.Status.FAILURE;
-            }
-
-            Node.Status s = GoToLocation(art[i].transform.position);
-            return s;
-        }
-        
-        public Node.Status GoToHome()
-        {
-            isWaitingForTicket = false;
-            Node.Status s = GoToLocation(home.transform.position);
-            return s;
+        base.Start();
+        this.gameObject.GetComponent<NavMeshAgent>().speed = Random.Range(8, 12);
+        boredom = Random.Range(20, 80);
+        RSelector selectObject = new RSelector("Select Art to View");
+        for (int i = 0; i < art.Length; i++) {
+            Leaf gta = new Leaf("Go to " + art[i].name, i, GoToArt);
+            selectObject.AddChild(gta);
         }
 
-        public Node.Status IsBored()
-        {
-            if (boredomLevel < 100)
-                return Node.Status.FAILURE;
+        Leaf goToFrontDoor = new Leaf("Go to Frontdoor", GoToFrontDoor);
+        Leaf goToHome = new Leaf("Go Home", GoToHome);
+        Leaf isBored = new Leaf("Is Bored?", IsBored);
+        Leaf isOpen = new Leaf("Is Open?", IsOpen);
 
-            return Node.Status.SUCCESS;
+        Sequence viewArt = new Sequence("View Art");
+        viewArt.AddChild(isOpen);
+        viewArt.AddChild(isBored);
+        viewArt.AddChild(goToFrontDoor);
+
+        Leaf noTicket = new Leaf("Wait for Ticket", NoTicket);
+        Leaf isWaiting = new Leaf("Waiting for Ticket", IsWaiting);
+
+        BehaviourTree waitForTicket = new BehaviourTree();
+        waitForTicket.AddChild(noTicket);
+
+        Loop getTicket = new Loop("Ticket", waitForTicket);
+        getTicket.AddChild(isWaiting);
+
+        viewArt.AddChild(getTicket);
+
+        BehaviourTree whileBored = new BehaviourTree();
+        whileBored.AddChild(isBored);
+
+        Loop lookAtPaintings = new Loop("Look", whileBored);
+        lookAtPaintings.AddChild(selectObject);
+
+        viewArt.AddChild(lookAtPaintings);
+
+
+        viewArt.AddChild(goToHome);
+
+        BehaviourTree galleryOpenCondition = new BehaviourTree();
+        galleryOpenCondition.AddChild(isOpen);
+        DepSequence bePatron = new DepSequence("Be an Art Patron", galleryOpenCondition, agent);
+        bePatron.AddChild(viewArt);
+
+        Selector viewArtWithFallback = new Selector("View Art with Fallback");
+        viewArtWithFallback.AddChild(bePatron);
+        viewArtWithFallback.AddChild(goToHome);
+
+        tree.AddChild(viewArtWithFallback);
+
+        StartCoroutine("IncreaseBoredom");
+    }
+
+    public Node.Status GoToFrontDoor() {
+
+        Node.Status s = GoToDoor(frontdoor);
+        return s;
+    }
+
+    IEnumerator IncreaseBoredom() {
+
+        //Debug.Log("Boredom coroutine started");
+        while (true) {
+
+            boredom = Mathf.Clamp(boredom + 20, 0, 1000);
+            //Debug.Log("Adding to boredom");
+            yield return new WaitForSeconds(Random.Range(1, 5));
         }
-        
-        public Node.Status NoTicke()
-        {
-            if (hasTicked || IsOpen() == Node.Status.FAILURE)
-                return Node.Status.FAILURE;
+    }
 
-            return Node.Status.SUCCESS;
+    public Node.Status GoToArt(int i) {
+        if (!art[i].activeSelf) return Node.Status.FAILURE;
+        Node.Status s = GoToLocation(art[i].transform.position);
+        if (s == Node.Status.SUCCESS) {
+
+            boredom = Mathf.Clamp(boredom - Random.Range(100, 200), 0, 1000);
         }
 
-        public Node.Status IsWaiting()
-        {
-            if (BlackBoard.Instance.RegisterPatron(this))
-            {
-                isWaitingForTicket = true;
-                return Node.Status.SUCCESS;
-            }
+        return s;
+    }
+
+    public Node.Status GoToHome() {
+
+        Node.Status s = GoToLocation(homeBase.transform.position);
+        isWaiting = false;
+        return s;
+    }
+
+    public Node.Status IsBored() {
+
+        if (boredom < 100) {
+
             return Node.Status.FAILURE;
         }
+
+        return Node.Status.SUCCESS;
+    }
+
+    public Node.Status NoTicket() {
+
+        if (ticket || IsOpen() == Node.Status.FAILURE) {
+
+            return Node.Status.FAILURE;
+        }
+
+        return Node.Status.SUCCESS;
+
+    }
+
+    public Node.Status IsWaiting() {
+
+        if (Blackboard.Instance.RegisterPatron(this.gameObject)) {
+
+            isWaiting = true;
+            return Node.Status.SUCCESS;
+        }
+
+        return Node.Status.FAILURE;
     }
 }

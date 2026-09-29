@@ -12,7 +12,9 @@ public static class Utils
         {
             n--;
             int k = r.Next(n + 1);
-            (list[k], list[n]) = (list[n], list[k]);
+            T value = list[k];
+            list[k] = list[n];
+            list[n] = value;
         }
     }
 }

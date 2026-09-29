@@ -1,84 +1,75 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace BTree.BehaviourTree
-{
-    public class BlackBoard : MonoBehaviour
-    {
-        private static BlackBoard _instance;
+public class Blackboard : MonoBehaviour {
 
-        public static BlackBoard Instance
-        {
-            get
-            {
-                if (!_instance)
-                {
-                    var blackBoard = FindObjectsOfType<BlackBoard>();
-                    if (blackBoard != null)
-                    {
-                        if (blackBoard.Length > 1)
-                        {
-                            _instance = blackBoard[0];
-                        }
+    public float timeOfDay;
+    public Text clock;
+    public Stack<GameObject> patrons = new Stack<GameObject>();
+    public int openTime = 6;
+    public int closeTime = 20;
+
+    static Blackboard instance;
+    public static Blackboard Instance {
+
+        get {
+
+            if (!instance) {
+
+                Blackboard[] blackboards = GameObject.FindObjectsOfType<Blackboard>();
+                if (blackboards != null) {
+
+                    if (blackboards.Length == 1) {
+
+                        instance = blackboards[0];
+                        return instance;
                     }
-                    var go = new GameObject("BlackBoard", typeof(BlackBoard));
-                    _instance = go.GetComponent<BlackBoard>();
-                    DontDestroyOnLoad(_instance.gameObject);
                 }
-
-                return _instance;
+                GameObject go = new GameObject("Blackboard", typeof(Blackboard));
+                instance = go.GetComponent<Blackboard>();
+                DontDestroyOnLoad(instance.gameObject);
             }
-            set => _instance = value;
+            return instance;
         }
+        set {
 
-        public int timeOfDay;
-        [SerializeField]private TextMeshProUGUI clock;
-        public Stack<PatronBehaviour> patrons = new Stack<PatronBehaviour>();
-
-        public int openTime = 6;
-        public int closeTime = 22;
-
-
-        private void Awake()
-        {
-            _instance = this;
+            instance = value as Blackboard;
         }
+    }
 
-        private void Start()
-        {
-            StartCoroutine(UpdateClock());
-        }
+    void Start() {
 
-        private IEnumerator UpdateClock()
-        {
-            while (true)
-            {
-                timeOfDay++;
-                if (timeOfDay > 23) timeOfDay = 0;
-                clock.text = timeOfDay + ":00";
-                
-                if(timeOfDay == closeTime)
-                    patrons.Clear();
-                
-                
-                yield return new WaitForSeconds(1f);
+        StartCoroutine("UpdateClock");
+    }
+
+    IEnumerator UpdateClock() {
+
+        while (true) {
+
+            timeOfDay++;
+            if (timeOfDay > 23) timeOfDay = 0;
+            clock.text = timeOfDay.ToString("00") + ":00";
+
+            if (timeOfDay == closeTime) {
+
+                patrons.Clear();
             }
+
+            yield return new WaitForSeconds(1.0f);
         }
+    }
+
+    public bool RegisterPatron(GameObject p) {
 
 
-        public bool RegisterPatron(PatronBehaviour p)
-        {
-           patrons.Push(p);
-           return true;
-        }
+        patrons.Push(p);
+        return true;
+    }
 
-        public void DeregisterPatron()
-        {
-           // patrons.Pop();
-        }
+    public void DeristerPatron() {
+
+        // patron = null;
     }
 }

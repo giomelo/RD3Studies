@@ -17,7 +17,7 @@ namespace _RD3.LaucherHandles
                 projectile,
                 transform.TransformPoint(offset),
                 transform.rotation);
-            body.velocity = Vector3.forward * velocity;
+            body.linearVelocity = Vector3.forward * velocity;
         }
     }
 
