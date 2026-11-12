@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using _RD3._Universal.Scripts.GOAP.GOAPBASE;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -23,7 +24,7 @@ namespace _RD3._Universal.Scripts.GOAP
         public WorldState agentBeliefs;
         
         public bool isRunning;
-
+        public GIventory inventory;
 
         private void Awake()
         {
@@ -37,7 +38,10 @@ namespace _RD3._Universal.Scripts.GOAP
             if (afterEffects == null) return;
             foreach (var w in afterEffects)
                 effects.Add(w.key, w.value);
-            
+
+            inventory = this.GetComponent<GAgent>().inventory;
+            agentBeliefs = GetComponent<GAgent>().beliefs;
+
         }
 
         public bool IsAchievable()

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using _RD3._Universal.Scripts.GOAP.GOAPBASE;
 using UnityEngine;
 
 namespace _RD3._Universal.Scripts.GOAP
@@ -30,6 +31,10 @@ namespace _RD3._Universal.Scripts.GOAP
 
         public GAction currentAction;
         private SubGoal _currentSubGoal;
+
+        public GIventory inventory = new GIventory();
+        public WorldState beliefs = new WorldState();
+        
         public void Start()
         {
             GAction[] acts = GetComponents<GAction>();
@@ -66,7 +71,7 @@ namespace _RD3._Universal.Scripts.GOAP
 
                 foreach (var sg in sortedGoals)
                 {
-                    _actionsQueue = _planner.Plan(actions, sg.Key.subGoals, null);
+                    _actionsQueue = _planner.Plan(actions, sg.Key.subGoals, beliefs);
 
                     if (_actionsQueue != null)
                     {

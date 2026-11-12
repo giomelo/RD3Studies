@@ -18,6 +18,22 @@ namespace _RD3._Universal.Scripts.GOAP
             this.states = new Dictionary<string, int>(allStates);
             this.action = action;
         }
+        
+        public Node(Node parent, float cost, Dictionary<string, int> allStates, Dictionary<string, int> beliefStates,GAction action)
+        {
+            this.parent = parent;
+            this.cost = cost;
+            this.states = new Dictionary<string, int>(allStates);
+
+            foreach (var b in beliefStates)
+            {
+                if(!states.ContainsKey(b.Key))
+                    states.Add(b.Key, b.Value);
+            }
+            
+            this.action = action;
+            
+        }
     }
     
     public class GPlanner
@@ -32,7 +48,7 @@ namespace _RD3._Universal.Scripts.GOAP
             }
 
             List<Node> leaves = new List<Node>();
-            Node start = new Node(null, 0, GWorld.instance.GetWorld.GetStates(), null);
+            Node start = new Node(null, 0, GWorld.instance.GetWorld.GetStates(),states.GetStates(), null);
             bool success = BuildGraph(start, leaves, usableActions, goal);
 
             if (!success)
